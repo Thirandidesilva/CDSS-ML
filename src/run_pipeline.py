@@ -15,9 +15,28 @@ REF = ROOT / "data" / "reference"
 RESULTS = ROOT / "results"
 
 LIKERT = {"Never": 0, "Rarely": 1, "Sometimes": 2, "Often": 3, "Always": 4}
-# TODO: confirm subscale groupings and item text against data/raw/item_mapping.csv (Phase 1)
-SUBSCALES: dict[str, list[str]] = {}
-ITEM_TEXT: dict[str, str] = {}
+SUBSCALES = {
+    "separation":    ["Q4", "Q5", "Q6", "Q11"],
+    "noise":         ["Q7", "Q8"],
+    "fear":          ["Q9", "Q13"],
+    "aggression":    ["Q10"],
+    "compulsive":    ["Q12"],
+    "physiological": ["Q14", "Q15"],
+}
+ITEM_TEXT = {
+    "Q4": "Trembles, shakes, or appears distressed when left alone",
+    "Q5": "Barks, howls, or whines persistently when left alone",
+    "Q6": "Destroys or chews household objects when left alone",
+    "Q7": "Shows fear or panic during thunderstorms or fireworks",
+    "Q8": "Hides, cowers, or freezes at sudden loud noises",
+    "Q9": "Shows fear of or avoids unfamiliar people",
+    "Q10": "Growls, snaps, or barks aggressively at strangers approaching the home",
+    "Q11": "Follows you constantly and becomes distressed when you leave the room",
+    "Q12": "Engages in repetitive behaviours: pacing, tail chasing, excessive licking",
+    "Q13": "Trembles, shakes, or pants excessively in unfamiliar places (vet, car journey)",
+    "Q14": "Loses appetite or refuses to eat during stressful situations",
+    "Q15": "Has difficulty settling or calming down after a stressful event",
+}
 
 
 def load_scoring_model():
