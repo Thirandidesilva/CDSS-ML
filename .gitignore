@@ -1,0 +1,5 @@
+results/vet_sheet_key_DO_NOT_SHARE.csv
+data/raw/
+.venv/
+__pycache__/
+*.pyc
