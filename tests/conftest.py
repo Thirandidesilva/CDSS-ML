@@ -16,13 +16,18 @@ def isolated_pipeline_env(tmp_path, monkeypatch):
     """
     ref = tmp_path / "reference"
     results = tmp_path / "results"
+    models = tmp_path / "models"
     ref.mkdir()
     results.mkdir()
+    models.mkdir()
 
     shutil.copy(ROOT / "data" / "reference" / "params_own.csv", ref / "params_own.csv")
     shutil.copy(ROOT / "results" / "scored_responses.csv", results / "scored_responses.csv")
     shutil.copy(ROOT / "results" / "phenotype_profiles.csv", results / "phenotype_profiles.csv")
+    shutil.copy(ROOT / "models" / "phenotype_rf.joblib", models / "phenotype_rf.joblib")
+    shutil.copy(ROOT / "models" / "phenotype_rf_metadata.json", models / "phenotype_rf_metadata.json")
 
     monkeypatch.setattr(run_pipeline, "REF", ref)
     monkeypatch.setattr(run_pipeline, "RESULTS", results)
+    monkeypatch.setattr(run_pipeline, "MODELS", models)
     return run_pipeline

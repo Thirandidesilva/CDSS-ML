@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 ITEMS_ALL = [f"Q{i}" for i in range(4, 16)]
-ITEMS_CALIBRATED = [q for q in ITEMS_ALL if q != "Q11"]
+ITEMS_CALIBRATED = [q for q in ITEMS_ALL if q not in ("Q11", "Q14")]  # neither has a Darwin's Ark counterpart
 N_CATEGORIES = 5
 
 

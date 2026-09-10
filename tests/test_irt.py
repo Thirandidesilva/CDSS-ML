@@ -49,8 +49,9 @@ def test_irt_matches_archived_reference_implementation():
 
 
 def test_calibrated_item_count():
-    assert len(irt.ITEMS_CALIBRATED) == 11
+    assert len(irt.ITEMS_CALIBRATED) == 10
     assert "Q11" not in irt.ITEMS_CALIBRATED
+    assert "Q14" not in irt.ITEMS_CALIBRATED
 
 
 def test_load_params_raises_on_non_monotone_thresholds():
