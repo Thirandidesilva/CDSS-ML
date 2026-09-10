@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 
+import joblib
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
@@ -32,3 +33,8 @@ def test_leakage_is_demonstrable(isolated_pipeline_env):
     accuracy = clf.score(df[["theta"]], df["severity"])
 
     assert accuracy > 0.95
+
+
+def test_rf_model_feature_list_has_no_forbidden_feature():
+    model = joblib.load(ROOT / "models" / "phenotype_rf.joblib")
+    assert not set(model.feature_names_in_) & set(FORBIDDEN_FEATURES)

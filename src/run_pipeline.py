@@ -5,6 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 
@@ -16,6 +17,7 @@ import rules    # noqa: E402
 
 REF = ROOT / "data" / "reference"
 RESULTS = ROOT / "results"
+MODELS = ROOT / "models"
 
 # "calibrated" needs Darwin's Ark (Phase 9); "own" is the fallback, demo-quality only.
 PARAM_PREFERENCE = ["params_calibrated.csv", "params_own.csv"]
@@ -67,7 +69,8 @@ def load_scoring_model():
                       f"        within-sample ranking, not a population reference.")
             else:
                 norms = pd.read_csv(norms_path)
-            return name, items, a, b, norms
+            rf_model = joblib.load(MODELS / "phenotype_rf.joblib")
+            return name, items, a, b, norms, rf_model
     sys.exit("no item-parameter file found in data/reference/")
 
 
@@ -101,8 +104,8 @@ def assign_band(theta, norms):
     return "High"
 
 
-def assign_phenotype(items):
-    """Nearest-centroid label; confidence is softmax-over-distance, a stand-in until Phase 8's Random Forest is serialised."""
+def assign_phenotype(items, rf_model):
+    """Nearest-centroid label; confidence is the Random Forest's predict_proba().max() (Phase 8)."""
     prof = pd.read_csv(RESULTS / "phenotype_profiles.csv").set_index("phenotype")
     cent = prof[irt.ITEMS_ALL]
     x = items[irt.ITEMS_ALL].to_numpy(float).ravel()
@@ -110,8 +113,7 @@ def assign_phenotype(items):
     ix = int(np.argmin(dist))
     cid = cent.index[ix]
     assert cid in rules.PHENOTYPE_LABELS, f"unexpected phenotype label {cid!r} in phenotype_profiles.csv"
-    w = np.exp(-dist)
-    conf = float(w[ix] / w.sum())
+    conf = float(rf_model.predict_proba(items[irt.ITEMS_ALL]).max())
     return cid, conf
 
 
@@ -124,7 +126,7 @@ def score_case(answers, model=None, *, verbose=True):
     """Runs one case through every stage; returns the full audit dict."""
     if model is None:
         model = load_scoring_model()
-    pname, items_used, a, b, norms = model
+    pname, items_used, a, b, norms, rf_model = model
 
     items = encode(answers)
     subs = subscale_means(items)
@@ -132,7 +134,7 @@ def score_case(answers, model=None, *, verbose=True):
     theta = float(est.theta.iloc[0])
     se = float(est.theta_se.iloc[0])
     band = assign_band(theta, norms)
-    pheno, conf = assign_phenotype(items)
+    pheno, conf = assign_phenotype(items, rf_model)
     f_irt, f_rf = uncertainty_flags(se, conf)
     rec = rules.evaluate(band, pheno, flag_irt=f_irt, flag_rf=f_rf,
                          theta_se=se, rf_confidence=conf)
