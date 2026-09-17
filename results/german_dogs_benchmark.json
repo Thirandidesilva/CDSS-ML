@@ -1,0 +1,43 @@
+{
+  "n": 3167,
+  "predictors": [
+    "Age",
+    "Sex",
+    "Weight",
+    "Height",
+    "Neuter status",
+    "Age acquisition",
+    "Training level",
+    "Owner sex",
+    "Owner age",
+    "Owner edication",
+    "N previous dogs",
+    "Purpose",
+    "N people",
+    "N dogs",
+    "Time together",
+    "Time play w",
+    "Head shape group"
+  ],
+  "cv_r2_mean": -0.0007,
+  "cv_r2_scores": [
+    -0.0141,
+    0.0066,
+    0.0385,
+    -0.0242,
+    -0.0104
+  ],
+  "top_importances": {
+    "Weight": 0.1364,
+    "Height": 0.1246,
+    "Age": 0.1233,
+    "Owner edication": 0.0738,
+    "N previous dogs": 0.0727,
+    "Training level": 0.0687,
+    "N dogs": 0.0511,
+    "Purpose": 0.05,
+    "N people": 0.0498,
+    "Owner age": 0.0494
+  },
+  "interpretation": "CV R^2 = -0.0007: demographic/ownership variables carry little to no predictive signal for this anxiety proxy in a large, real cohort. This null result is itself the reportable finding (representativeness benchmark), not a failed model."
+}

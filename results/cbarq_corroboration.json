@@ -1,0 +1,27 @@
+{
+  "pairs": [
+    {
+      "a": "sepprobs",
+      "b": "nonsocialfear",
+      "r": 0.3029,
+      "n": 11614
+    },
+    {
+      "a": "sepprobs",
+      "b": "strangerfear",
+      "r": 0.2303,
+      "n": 11702
+    },
+    {
+      "a": "strangerfear",
+      "b": "nonsocialfear",
+      "r": 0.4965,
+      "n": 11568
+    }
+  ],
+  "primary_pair": [
+    "sepprobs",
+    "nonsocialfear"
+  ],
+  "interpretation": "sepprobs (separation problems) vs nonsocialfear (fear of loud noises, unfamiliar objects/situations - the closest available proxy to noise-related fear; no literal 'noise' subscale exists in this file) is the primary comparison. strangerfear (fear of unfamiliar people) is a different construct closer to Q9 and is reported for context only, not as the noise proxy."
+}
