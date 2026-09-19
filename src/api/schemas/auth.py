@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class RegisterRequest(BaseModel):
@@ -34,6 +34,15 @@ class ForgetPasswordRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
+
+
+class VerifyOtpRequest(BaseModel):
+    # Shared by both /forget-username/verify-otp and /forget-password/verify-otp — the
+    # purpose is implicit in which endpoint is called, not a field here.
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr
+    otp: str = Field(pattern=r"^\d{6}$")  # malformed input is a 422, before it reaches verify_otp()
 
 
 class ResetPasswordRequest(BaseModel):

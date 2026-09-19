@@ -207,12 +207,12 @@
                 "schema": {},
                 "examples": {
                   "found": {
-                    "summary": "Account exists",
+                    "summary": "Account exists \u2014 a verification code was emailed",
                     "value": {
                       "code": "0000",
                       "response": [
                         {
-                          "user_name": "alice"
+                          "message": "a verification code has been sent to your email"
                         }
                       ]
                     }
@@ -224,6 +224,84 @@
                       "response": [
                         {
                           "message": "no account with that email"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forget-username/verify-otp": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forget Username Verify Otp",
+        "operationId": "forget_username_verify_otp_api_v1_auth_forget_username_verify_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "verified": {
+                    "summary": "Code correct \u2014 username emailed",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "message": "your username has been emailed to you"
+                        }
+                      ]
+                    }
+                  },
+                  "invalid": {
+                    "summary": "Wrong/expired code, or too many attempts",
+                    "value": {
+                      "code": "1006",
+                      "response": [
+                        {
+                          "message": "invalid or expired code"
                         }
                       ]
                     }
@@ -285,13 +363,12 @@
                 "schema": {},
                 "examples": {
                   "found": {
-                    "summary": "Account exists \u2014 reset token issued",
+                    "summary": "Account exists \u2014 a verification code was emailed",
                     "value": {
                       "code": "0000",
                       "response": [
                         {
-                          "reset_token": "eyJhbGciOiJIUzI1NiIs...",
-                          "expires_in": 900
+                          "message": "a verification code has been sent to your email"
                         }
                       ]
                     }
@@ -303,6 +380,85 @@
                       "response": [
                         {
                           "message": "no account with that email"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forget-password/verify-otp": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forget Password Verify Otp",
+        "operationId": "forget_password_verify_otp_api_v1_auth_forget_password_verify_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "verified": {
+                    "summary": "Code correct \u2014 reset token issued",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "reset_token": "eyJhbGciOiJIUzI1NiIs...",
+                          "expires_in": 900
+                        }
+                      ]
+                    }
+                  },
+                  "invalid": {
+                    "summary": "Wrong/expired code, or too many attempts",
+                    "value": {
+                      "code": "1006",
+                      "response": [
+                        {
+                          "message": "invalid or expired code"
                         }
                       ]
                     }
@@ -3360,6 +3516,27 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyOtpRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "otp": {
+            "type": "string",
+            "pattern": "^\\d{6}$",
+            "title": "Otp"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "otp"
+        ],
+        "title": "VerifyOtpRequest"
       }
     }
   }

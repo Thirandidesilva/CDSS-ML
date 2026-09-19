@@ -1,3 +1,12 @@
+import re
+
+
+def _extract_code(body: str) -> str:
+    match = re.search(r"\d{6}", body)
+    assert match, f"no 6-digit code found in email body: {body!r}"
+    return match.group(0)
+
+
 def test_openapi_docs_render(api_client):
     resp = api_client.get("/openapi.json")
     assert resp.status_code == 200
@@ -50,13 +59,21 @@ def test_missing_token_returns_401(api_client):
     assert resp.json()["code"] == "1000"
 
 
-def test_forget_password_then_reset(api_client):
+def test_forget_password_then_reset(api_client, sent_emails):
     api_client.post("/api/v1/auth/register", json={
         "user_name": "dana", "email": "dana@example.com", "password": "old-password",
     })
     forgot = api_client.post("/api/v1/auth/forget-password", json={"email": "dana@example.com"})
     assert forgot.status_code == 200
-    token = forgot.json()["response"][0]["reset_token"]
+    assert forgot.json()["code"] == "0000"
+    assert "reset_token" not in forgot.json()["response"][0]  # no longer handed back in-band
+
+    code = _extract_code(sent_emails[-1][2])
+    verified = api_client.post(
+        "/api/v1/auth/forget-password/verify-otp", json={"email": "dana@example.com", "otp": code}
+    )
+    assert verified.status_code == 200
+    token = verified.json()["response"][0]["reset_token"]
 
     reset = api_client.post(
         "/api/v1/auth/reset-password", json={"reset_token": token, "new_password": "new-password"}
@@ -81,10 +98,112 @@ def test_forget_password_then_reset(api_client):
     assert replay.json()["code"] == "1004"
 
 
-def test_forget_username(api_client):
+def test_forget_username(api_client, sent_emails):
     api_client.post("/api/v1/auth/register", json={
         "user_name": "erin", "email": "erin@example.com", "password": "correcthorse",
     })
     resp = api_client.post("/api/v1/auth/forget-username", json={"email": "erin@example.com"})
     assert resp.status_code == 200
-    assert resp.json()["response"][0]["user_name"] == "erin"
+    assert "user_name" not in resp.json()["response"][0]  # no longer handed back in-band
+
+    code = _extract_code(sent_emails[-1][2])
+    verified = api_client.post(
+        "/api/v1/auth/forget-username/verify-otp", json={"email": "erin@example.com", "otp": code}
+    )
+    assert verified.status_code == 200
+    assert verified.json()["code"] == "0000"
+
+    # the username itself only ever appears in the (captured, not returned) email
+    username_email = sent_emails[-1]
+    assert username_email[0] == "erin@example.com"
+    assert "erin" in username_email[2]
+
+
+def test_forget_username_wrong_otp_rejected(api_client, sent_emails):
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "frank", "email": "frank@example.com", "password": "correcthorse",
+    })
+    api_client.post("/api/v1/auth/forget-username", json={"email": "frank@example.com"})
+
+    resp = api_client.post(
+        "/api/v1/auth/forget-username/verify-otp", json={"email": "frank@example.com", "otp": "000000"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["code"] == "1006"
+
+
+def test_otp_expired_is_rejected(api_client, sent_emails, test_db_engine):
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "grace", "email": "grace@example.com", "password": "correcthorse",
+    })
+    api_client.post("/api/v1/auth/forget-password", json={"email": "grace@example.com"})
+    code = _extract_code(sent_emails[-1][2])
+
+    # Force the stored code into the past instead of sleeping or mocking the clock.
+    # Must use test_db_engine directly (the same DB the API's overridden get_db uses) —
+    # api.db.SessionLocal points at create_app()'s own separate throwaway DB, not this one.
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy.orm import Session
+
+    from api.enums import OtpPurpose
+    from api.models import OtpCode, User
+
+    with Session(test_db_engine) as db:
+        user = db.query(User).filter(User.email == "grace@example.com").one()
+        row = (
+            db.query(OtpCode)
+            .filter(OtpCode.user_id == user.user_id, OtpCode.purpose == OtpPurpose.FORGET_PASSWORD)
+            .one()
+        )
+        row.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+        db.commit()
+
+    resp = api_client.post(
+        "/api/v1/auth/forget-password/verify-otp", json={"email": "grace@example.com", "otp": code}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["code"] == "1006"
+
+
+def test_otp_too_many_attempts_locks_out_even_correct_code(api_client, sent_emails):
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "henry", "email": "henry@example.com", "password": "correcthorse",
+    })
+    api_client.post("/api/v1/auth/forget-password", json={"email": "henry@example.com"})
+    code = _extract_code(sent_emails[-1][2])
+
+    for _ in range(5):  # default otp_max_attempts
+        wrong = api_client.post(
+            "/api/v1/auth/forget-password/verify-otp",
+            json={"email": "henry@example.com", "otp": "000000" if code != "000000" else "111111"},
+        )
+        assert wrong.json()["code"] == "1006"
+
+    resp = api_client.post(
+        "/api/v1/auth/forget-password/verify-otp", json={"email": "henry@example.com", "otp": code}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["code"] == "1006"
+
+
+def test_requesting_new_otp_invalidates_previous_one(api_client, sent_emails):
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "iris", "email": "iris@example.com", "password": "correcthorse",
+    })
+    api_client.post("/api/v1/auth/forget-password", json={"email": "iris@example.com"})
+    first_code = _extract_code(sent_emails[-1][2])
+
+    api_client.post("/api/v1/auth/forget-password", json={"email": "iris@example.com"})
+    second_code = _extract_code(sent_emails[-1][2])
+
+    stale = api_client.post(
+        "/api/v1/auth/forget-password/verify-otp", json={"email": "iris@example.com", "otp": first_code}
+    )
+    assert stale.json()["code"] == "1006"
+
+    fresh = api_client.post(
+        "/api/v1/auth/forget-password/verify-otp", json={"email": "iris@example.com", "otp": second_code}
+    )
+    assert fresh.status_code == 200
+    assert fresh.json()["code"] == "0000"
