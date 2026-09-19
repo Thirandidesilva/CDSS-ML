@@ -1,0 +1,3366 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Canine Anxiety CDSS",
+    "description": "create_app() factory: mounts routers, loads the scoring model once, wires the DB engine.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "registered": {
+                    "summary": "New account created",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                          "user_name": "alice",
+                          "email": "alice@example.com",
+                          "role": "owner"
+                        }
+                      ]
+                    }
+                  },
+                  "duplicate_email": {
+                    "summary": "Email already registered",
+                    "value": {
+                      "code": "1002",
+                      "response": [
+                        {
+                          "message": "email already registered"
+                        }
+                      ]
+                    }
+                  },
+                  "duplicate_username": {
+                    "summary": "Username already taken",
+                    "value": {
+                      "code": "1005",
+                      "response": [
+                        {
+                          "message": "username already taken"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "logged_in": {
+                    "summary": "Valid credentials",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                          "token_type": "bearer",
+                          "expires_in": 3600,
+                          "user": {
+                            "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                            "role": "owner"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "invalid_credentials": {
+                    "summary": "Wrong username/email or password",
+                    "value": {
+                      "code": "1001",
+                      "response": [
+                        {
+                          "message": "invalid username/email or password"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forget-username": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forget Username",
+        "operationId": "forget_username_api_v1_auth_forget_username_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgetUsernameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "found": {
+                    "summary": "Account exists",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "user_name": "alice"
+                        }
+                      ]
+                    }
+                  },
+                  "not_found": {
+                    "summary": "No account with that email",
+                    "value": {
+                      "code": "1003",
+                      "response": [
+                        {
+                          "message": "no account with that email"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forget-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Forget Password",
+        "operationId": "forget_password_api_v1_auth_forget_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "found": {
+                    "summary": "Account exists \u2014 reset token issued",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "reset_token": "eyJhbGciOiJIUzI1NiIs...",
+                          "expires_in": 900
+                        }
+                      ]
+                    }
+                  },
+                  "not_found": {
+                    "summary": "No account with that email",
+                    "value": {
+                      "code": "1003",
+                      "response": [
+                        {
+                          "message": "no account with that email"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reset Password",
+        "operationId": "reset_password_api_v1_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "reset": {
+                    "summary": "Password updated",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "message": "password updated"
+                        }
+                      ]
+                    }
+                  },
+                  "invalid_token": {
+                    "summary": "Reset token is invalid, expired, or already used",
+                    "value": {
+                      "code": "1004",
+                      "response": [
+                        {
+                          "message": "reset token is invalid or expired"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get Profile",
+        "operationId": "get_profile_api_v1_users_me_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "user_name": "alice",
+                      "first_name": "Alice",
+                      "last_name": "Smith",
+                      "email": "alice@example.com",
+                      "phone_number": "0771234567",
+                      "role": "owner"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/update": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update Profile",
+        "operationId": "update_profile_api_v1_users_update_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "updated": {
+                    "summary": "Profile updated",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                          "user_name": "alice",
+                          "first_name": "Alice",
+                          "last_name": "Smith",
+                          "email": "alice@example.com",
+                          "phone_number": "0771234567",
+                          "role": "owner"
+                        }
+                      ]
+                    }
+                  },
+                  "duplicate_email": {
+                    "summary": "Email already used by another account",
+                    "value": {
+                      "code": "1002",
+                      "response": [
+                        {
+                          "message": "email already in use"
+                        }
+                      ]
+                    }
+                  },
+                  "wrong_current_password": {
+                    "summary": "current_password didn't match, so new_password was rejected",
+                    "value": {
+                      "code": "1001",
+                      "response": [
+                        {
+                          "message": "current password is incorrect"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/delete": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Delete Profile",
+        "operationId": "delete_profile_api_v1_users_delete_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "message": "account deleted"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get All Users",
+        "operationId": "get_all_users_api_v1_users_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "user_name": "alice",
+                      "first_name": "Alice",
+                      "last_name": "Smith",
+                      "email": "alice@example.com",
+                      "phone_number": "0771234567",
+                      "role": "owner"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requires the admin role",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "requires admin role"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs/create": {
+      "post": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "Create Dog",
+        "operationId": "create_dog_api_v1_dogs_create_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "dog_name": "Rex",
+                      "dog_breed": "Labrador",
+                      "dog_age": 4,
+                      "dog_gender": "male"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs": {
+      "get": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "List Dogs",
+        "operationId": "list_dogs_api_v1_dogs_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "dog_name": "Rex",
+                      "dog_breed": "Labrador",
+                      "dog_age": 4,
+                      "dog_gender": "male"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs/all": {
+      "get": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "Get All Dogs",
+        "operationId": "get_all_dogs_api_v1_dogs_all_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "dog_name": "Rex",
+                      "dog_breed": "Labrador",
+                      "dog_age": 4,
+                      "dog_gender": "male"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requires the admin role",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "requires admin role"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs/{dog_id}": {
+      "get": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "Get Dog",
+        "operationId": "get_dog_api_v1_dogs__dog_id__get",
+        "parameters": [
+          {
+            "name": "dog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dog Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "dog_name": "Rex",
+                      "dog_breed": "Labrador",
+                      "dog_age": 4,
+                      "dog_gender": "male"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs/update/{dog_id}": {
+      "post": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "Update Dog",
+        "operationId": "update_dog_api_v1_dogs_update__dog_id__post",
+        "parameters": [
+          {
+            "name": "dog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dog Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "dog_name": "Rex",
+                      "dog_breed": "Labrador",
+                      "dog_age": 4,
+                      "dog_gender": "male"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dogs/delete/{dog_id}": {
+      "post": {
+        "tags": [
+          "dogs"
+        ],
+        "summary": "Delete Dog",
+        "operationId": "delete_dog_api_v1_dogs_delete__dog_id__post",
+        "parameters": [
+          {
+            "name": "dog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dog Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "message": "dog deleted"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/questions": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get All Questions",
+        "operationId": "get_all_questions_api_v1_assessment_questions_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "item_code": "Q4",
+                      "text": "..."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/submit": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Submit Assessment",
+        "operationId": "submit_assessment_api_v1_assessment_submit_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "scored": {
+                    "summary": "Severity band is precise enough to act on",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                          "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                          "session_number": 1,
+                          "theta_calibrated": -0.376,
+                          "theta_se": 0.309,
+                          "severity_band": "Low",
+                          "phenotype": "Noise-specific",
+                          "rf_confidence": 0.79,
+                          "flag_irt": false,
+                          "flag_rf": false,
+                          "subscales": {
+                            "separation": 1.75,
+                            "noise": 2.0,
+                            "fear": 0.5,
+                            "aggression": 4.0,
+                            "compulsive": 2.0,
+                            "physiological": 1.5
+                          },
+                          "recommendation": {
+                            "rule_id": "R-NOISE-LOW",
+                            "urgency": "routine",
+                            "action": "No behavioural intervention indicated by this screening...",
+                            "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                            "withheld": false,
+                            "caveats": [
+                              "This is a behavioural screening result, not a veterinary diagnosis."
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "withheld": {
+                    "summary": "theta SE too high \u2014 recommendation withheld, still HTTP 200",
+                    "value": {
+                      "code": "0000",
+                      "response": [
+                        {
+                          "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                          "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                          "session_number": 1,
+                          "theta_calibrated": 0.93,
+                          "theta_se": 0.536,
+                          "severity_band": "Low",
+                          "phenotype": "Noise-specific",
+                          "rf_confidence": 0.79,
+                          "flag_irt": true,
+                          "flag_rf": false,
+                          "subscales": {
+                            "separation": 1.75,
+                            "noise": 2.0,
+                            "fear": 0.5,
+                            "aggression": 4.0,
+                            "compulsive": 2.0,
+                            "physiological": 1.5
+                          },
+                          "recommendation": {
+                            "rule_id": "R-NOISE-LOW",
+                            "urgency": "unknown",
+                            "action": "Recommendation withheld pending a more precise assessment; consult your veterinarian if you have concerns.",
+                            "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                            "withheld": true,
+                            "withheld_reason": "theta SE 0.536 exceeds 0.5; severity band is too imprecise to act on",
+                            "caveats": [
+                              "This is a behavioural screening result, not a veterinary diagnosis."
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/all": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get All Assessments",
+        "operationId": "get_all_assessments_api_v1_assessment_all_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "session_number": 1,
+                      "theta_calibrated": -0.376,
+                      "theta_se": 0.309,
+                      "severity_band": "Low",
+                      "phenotype": "Noise-specific",
+                      "rf_confidence": 0.79,
+                      "flag_irt": false,
+                      "flag_rf": false,
+                      "subscales": {
+                        "separation": 1.75,
+                        "noise": 2.0,
+                        "fear": 0.5,
+                        "aggression": 4.0,
+                        "compulsive": 2.0,
+                        "physiological": 1.5
+                      },
+                      "recommendation": {
+                        "rule_id": "R-NOISE-LOW",
+                        "urgency": "routine",
+                        "action": "No behavioural intervention indicated by this screening...",
+                        "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                        "withheld": false,
+                        "caveats": [
+                          "This is a behavioural screening result, not a veterinary diagnosis."
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requires the admin role",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "requires admin role"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/dog/{dog_id}": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "List Dog Assessments",
+        "operationId": "list_dog_assessments_api_v1_assessment_dog__dog_id__get",
+        "parameters": [
+          {
+            "name": "dog_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Dog Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "session_number": 1,
+                      "theta_calibrated": -0.376,
+                      "theta_se": 0.309,
+                      "severity_band": "Low",
+                      "phenotype": "Noise-specific",
+                      "rf_confidence": 0.79,
+                      "flag_irt": false,
+                      "flag_rf": false,
+                      "subscales": {
+                        "separation": 1.75,
+                        "noise": 2.0,
+                        "fear": 0.5,
+                        "aggression": 4.0,
+                        "compulsive": 2.0,
+                        "physiological": 1.5
+                      },
+                      "recommendation": {
+                        "rule_id": "R-NOISE-LOW",
+                        "urgency": "routine",
+                        "action": "No behavioural intervention indicated by this screening...",
+                        "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                        "withheld": false,
+                        "caveats": [
+                          "This is a behavioural screening result, not a veterinary diagnosis."
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/{assessment_id}": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get Assessment Result",
+        "operationId": "get_assessment_result_api_v1_assessment__assessment_id__get",
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assessment Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "session_number": 1,
+                      "theta_calibrated": -0.376,
+                      "theta_se": 0.309,
+                      "severity_band": "Low",
+                      "phenotype": "Noise-specific",
+                      "rf_confidence": 0.79,
+                      "flag_irt": false,
+                      "flag_rf": false,
+                      "subscales": {
+                        "separation": 1.75,
+                        "noise": 2.0,
+                        "fear": 0.5,
+                        "aggression": 4.0,
+                        "compulsive": 2.0,
+                        "physiological": 1.5
+                      },
+                      "recommendation": {
+                        "rule_id": "R-NOISE-LOW",
+                        "urgency": "routine",
+                        "action": "No behavioural intervention indicated by this screening...",
+                        "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                        "withheld": false,
+                        "caveats": [
+                          "This is a behavioural screening result, not a veterinary diagnosis."
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assessment does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "3001",
+                  "response": [
+                    {
+                      "message": "assessment not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/delete/{assessment_id}": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Delete Assessment",
+        "operationId": "delete_assessment_api_v1_assessment_delete__assessment_id__post",
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assessment Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "message": "assessment deleted"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assessment does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "3001",
+                  "response": [
+                    {
+                      "message": "assessment not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report/generate": {
+      "post": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Generate Report",
+        "operationId": "generate_report_api_v1_report_generate_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "report_id": "d2e3f4a5-6666-4b7c-9d8e-fedcba987654",
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "generated_at": "2026-09-19T12:00:00+00:00",
+                      "report_format": "json",
+                      "status": "ready",
+                      "content": {
+                        "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                        "theta_calibrated": -0.376,
+                        "severity_band": "Low",
+                        "phenotype": "Noise-specific",
+                        "flag_irt": false,
+                        "flag_rf": false
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Assessment does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "3001",
+                  "response": [
+                    {
+                      "message": "assessment not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report": {
+      "get": {
+        "tags": [
+          "report"
+        ],
+        "summary": "List My Reports",
+        "operationId": "list_my_reports_api_v1_report_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "report_id": "d2e3f4a5-6666-4b7c-9d8e-fedcba987654",
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "generated_at": "2026-09-19T12:00:00+00:00",
+                      "report_format": "json",
+                      "status": "ready",
+                      "content": {
+                        "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                        "theta_calibrated": -0.376,
+                        "severity_band": "Low",
+                        "phenotype": "Noise-specific",
+                        "flag_irt": false,
+                        "flag_rf": false
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report/all": {
+      "get": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Get All Reports",
+        "operationId": "get_all_reports_api_v1_report_all_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "report_id": "d2e3f4a5-6666-4b7c-9d8e-fedcba987654",
+                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                      "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                      "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                      "generated_at": "2026-09-19T12:00:00+00:00",
+                      "report_format": "json",
+                      "status": "ready",
+                      "content": {
+                        "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                        "theta_calibrated": -0.376,
+                        "severity_band": "Low",
+                        "phenotype": "Noise-specific",
+                        "flag_irt": false,
+                        "flag_rf": false
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requires the admin role",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "requires admin role"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report/download/{report_id}": {
+      "get": {
+        "tags": [
+          "report"
+        ],
+        "summary": "Download Report",
+        "operationId": "download_report_api_v1_report_download__report_id__get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The report file, streamed directly (not wrapped in the {code,response} envelope)",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "report_id": "d2e3f4a5-6666-4b7c-9d8e-fedcba987654",
+                  "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                  "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                  "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                  "generated_at": "2026-09-19T12:00:00+00:00",
+                  "report_format": "json",
+                  "status": "ready",
+                  "content": {
+                    "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                    "theta_calibrated": -0.376,
+                    "severity_band": "Low",
+                    "phenotype": "Noise-specific",
+                    "flag_irt": false,
+                    "flag_rf": false
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Report does not exist",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "4002",
+                  "response": [
+                    {
+                      "message": "report not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssessmentSubmitRequest": {
+        "properties": {
+          "dog_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dog Id"
+          },
+          "Q4": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q4",
+            "description": "Trembles, shakes, or appears distressed when left alone"
+          },
+          "Q5": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q5",
+            "description": "Barks, howls, or whines persistently when left alone"
+          },
+          "Q6": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q6",
+            "description": "Destroys or chews household objects when left alone"
+          },
+          "Q7": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q7",
+            "description": "Shows fear or panic during thunderstorms or fireworks"
+          },
+          "Q8": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q8",
+            "description": "Hides, cowers, or freezes at sudden loud noises"
+          },
+          "Q9": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q9",
+            "description": "Shows fear of or avoids unfamiliar people"
+          },
+          "Q10": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q10",
+            "description": "Growls, snaps, or barks aggressively at strangers approaching the home"
+          },
+          "Q11": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q11",
+            "description": "Follows you constantly and becomes distressed when you leave the room"
+          },
+          "Q12": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q12",
+            "description": "Engages in repetitive behaviours: pacing, tail chasing, excessive licking"
+          },
+          "Q13": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q13",
+            "description": "Trembles, shakes, or pants excessively in unfamiliar places (vet, car journey)"
+          },
+          "Q14": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q14",
+            "description": "Loses appetite or refuses to eat during stressful situations"
+          },
+          "Q15": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Q15",
+            "description": "Has difficulty settling or calming down after a stressful event"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dog_id",
+          "Q4",
+          "Q5",
+          "Q6",
+          "Q7",
+          "Q8",
+          "Q9",
+          "Q10",
+          "Q11",
+          "Q12",
+          "Q13",
+          "Q14",
+          "Q15"
+        ],
+        "title": "AssessmentSubmitRequest"
+      },
+      "DogCreateRequest": {
+        "properties": {
+          "dog_name": {
+            "type": "string",
+            "title": "Dog Name"
+          },
+          "dog_breed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dog Breed"
+          },
+          "dog_age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dog Age"
+          },
+          "dog_gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DogGender"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_picture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Picture"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dog_name"
+        ],
+        "title": "DogCreateRequest"
+      },
+      "DogGender": {
+        "type": "string",
+        "enum": [
+          "male",
+          "female",
+          "unknown"
+        ],
+        "title": "DogGender"
+      },
+      "DogUpdateRequest": {
+        "properties": {
+          "dog_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dog Name"
+          },
+          "dog_breed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dog Breed"
+          },
+          "dog_age": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dog Age"
+          },
+          "dog_gender": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DogGender"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile_picture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Picture"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DogUpdateRequest"
+      },
+      "ForgetPasswordRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgetPasswordRequest"
+      },
+      "ForgetUsernameRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "ForgetUsernameRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LoginRequest": {
+        "properties": {
+          "user_name_or_email": {
+            "type": "string",
+            "title": "User Name Or Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_name_or_email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user_name",
+          "email",
+          "password"
+        ],
+        "title": "RegisterRequest"
+      },
+      "ReportGenerateRequest": {
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment_id"
+        ],
+        "title": "ReportGenerateRequest"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "reset_token": {
+            "type": "string",
+            "title": "Reset Token"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reset_token",
+          "new_password"
+        ],
+        "title": "ResetPasswordRequest"
+      },
+      "UserUpdateRequest": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name"
+          },
+          "phone_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Number"
+          },
+          "profile_picture": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Picture"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "current_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Password"
+          },
+          "new_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UserUpdateRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
