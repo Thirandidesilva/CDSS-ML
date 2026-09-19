@@ -14,6 +14,7 @@ class BusinessCode(str, Enum):
     ACCOUNT_NOT_FOUND = "1003"
     INVALID_RESET_TOKEN = "1004"
     DUPLICATE_USERNAME = "1005"
+    OTP_INVALID = "1006"  # wrong code, expired, or attempts exhausted — never distinguished
 
     # 2xxx = dog domain
     DOG_NOT_FOUND = "2001"

@@ -46,6 +46,11 @@ class ReportStatus(str, Enum):
     FAILED = "failed"
 
 
+class OtpPurpose(str, Enum):
+    FORGET_USERNAME = "forget_username"
+    FORGET_PASSWORD = "forget_password"
+
+
 # Not redeclared: these wrap rules.py's own constants directly, so the DB's valid-value
 # set can never drift from the rule engine's.
 # Enum(name, {MEMBER_NAME: value, ...}, type=str) is the "functional" way to build an

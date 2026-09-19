@@ -1,6 +1,6 @@
-"""ORM schema: users, dogs, assessment, irt_response, recommendation, report.
+"""ORM schema: users, dogs, assessment, irt_response, recommendation, report, otp_codes.
 
-Six tables, one file — small enough to read end to end, matching this project's
+Seven tables, one file — small enough to read end to end, matching this project's
 "can the author explain this under examination" standard. Never imported by
 run_pipeline.py/rules.py/etc.: this is a layer that calls into the ML core, not the
 other way round.
@@ -32,6 +32,7 @@ from .enums import (
     AssessmentStatus,
     DogGender,
     DogStatus,
+    OtpPurpose,
     Phenotype,
     ReportStatus,
     SeverityBand,
@@ -223,3 +224,25 @@ class Report(Base):
     created_at: Mapped[datetime] = mapped_column(default=_now)
 
     assessment: Mapped["Assessment"] = relationship(back_populates="reports")
+
+
+class OtpCode(Base):
+    """A one-time code for the forget-username/forget-password flows. DB-backed (not a
+    stateless JWT like the password-reset token) specifically so verification attempts
+    can be capped — a 6-digit code needs real brute-force protection."""
+
+    __tablename__ = "otp_codes"
+
+    otp_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    purpose: Mapped[OtpPurpose] = mapped_column(
+        SAEnum(OtpPurpose, native_enum=False, values_callable=lambda e: [m.value for m in e]),
+        nullable=False,
+    )
+    code_hash: Mapped[str] = mapped_column(String, nullable=False)  # sha256 — raw code never stored
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # Set on successful verification, or when superseded by a newer code for the same
+    # user+purpose (requesting a new code invalidates any still-pending one).
+    consumed_at: Mapped[Optional[datetime]] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(default=_now)

@@ -19,6 +19,18 @@ class Settings(BaseSettings):
     reset_token_expire_minutes: int = 15
     reports_dir: str = "reports/generated"  # gitignored — rendered vet-report PDFs live here
 
+    # Resend's HTTP API (not SMTP — avoids the port/implicit-TLS mismatches SMTP hit).
+    # Required (no default): fail loudly at startup if unconfigured, same as
+    # database_url/jwt_secret. The "from" address must be either Resend's sandbox
+    # sender (onboarding@resend.dev — only deliverable to the Resend account's own
+    # email) or an address on a domain verified in that Resend account; no address on a
+    # domain you don't control (e.g. gmail.com) will ever work, on SMTP or the API.
+    resend_api_key: str
+    email_from_address: str
+
+    otp_expire_minutes: int = 10
+    otp_max_attempts: int = 5
+
 
 @lru_cache
 def get_settings() -> Settings:

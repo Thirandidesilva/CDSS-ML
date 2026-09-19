@@ -13,6 +13,11 @@ import run_pipeline  # noqa: E402
 # well-formed. Set once, before any Settings()/get_settings() call in the whole session.
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-do-not-use-in-prod")
+# Resend fields are required (no default) so a real deployment fails loudly if
+# unconfigured — tests never send real email (see sent_emails below), so these values
+# just need to be well-formed enough for Settings() to construct.
+os.environ.setdefault("RESEND_API_KEY", "test")
+os.environ.setdefault("EMAIL_FROM_ADDRESS", "noreply@example.com")
 
 
 @pytest.fixture
@@ -101,6 +106,23 @@ def registered_owner(api_client):
     assert login.status_code == 200, login.text
     token = login.json()["response"][0]["access_token"]
     return api_client, {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def sent_emails(monkeypatch):
+    """Captures (to, subject, body) tuples instead of really sending — patches the
+    attribute on the email module itself (not a name imported elsewhere), which is
+    exactly what routers/auth.py's `email_service.send_email(...)` call style is for.
+    """
+    sent = []
+
+    def _fake_send(to, subject, body):
+        sent.append((to, subject, body))
+
+    from api.services import email as email_service
+
+    monkeypatch.setattr(email_service, "send_email", _fake_send)
+    return sent
 
 
 @pytest.fixture
