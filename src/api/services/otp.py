@@ -1,7 +1,7 @@
-"""One-time codes for the forget-username/forget-password flows: generation, and
-verification with attempt-limiting. DB-backed (see models.OtpCode) rather than a
-stateless JWT like the password-reset token, because a 6-digit code needs the server to
-actually count verification attempts across separate requests.
+"""One-time codes for the forget-password flow: generation, and verification with
+attempt-limiting. DB-backed (see models.OtpCode) rather than a stateless JWT like the
+password-reset token, because a 6-digit code needs the server to actually count
+verification attempts across separate requests.
 """
 from __future__ import annotations
 

@@ -37,8 +37,7 @@ class ForgetPasswordRequest(BaseModel):
 
 
 class VerifyOtpRequest(BaseModel):
-    # Shared by both /forget-username/verify-otp and /forget-password/verify-otp — the
-    # purpose is implicit in which endpoint is called, not a field here.
+    # Used by /forget-password/verify-otp — the only OTP-gated flow left.
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr

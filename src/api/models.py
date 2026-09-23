@@ -227,9 +227,9 @@ class Report(Base):
 
 
 class OtpCode(Base):
-    """A one-time code for the forget-username/forget-password flows. DB-backed (not a
-    stateless JWT like the password-reset token) specifically so verification attempts
-    can be capped — a 6-digit code needs real brute-force protection."""
+    """A one-time code for the forget-password flow. DB-backed (not a stateless JWT
+    like the password-reset token) specifically so verification attempts can be
+    capped — a 6-digit code needs real brute-force protection."""
 
     __tablename__ = "otp_codes"
 

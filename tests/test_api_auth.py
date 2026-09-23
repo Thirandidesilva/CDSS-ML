@@ -99,19 +99,14 @@ def test_forget_password_then_reset(api_client, sent_emails):
 
 
 def test_forget_username(api_client, sent_emails):
+    # No OTP step — one call, one email, since a username isn't a secret worth gating.
     api_client.post("/api/v1/auth/register", json={
         "user_name": "erin", "email": "erin@example.com", "password": "correcthorse",
     })
     resp = api_client.post("/api/v1/auth/forget-username", json={"email": "erin@example.com"})
     assert resp.status_code == 200
-    assert "user_name" not in resp.json()["response"][0]  # no longer handed back in-band
-
-    code = _extract_code(sent_emails[-1][2])
-    verified = api_client.post(
-        "/api/v1/auth/forget-username/verify-otp", json={"email": "erin@example.com", "otp": code}
-    )
-    assert verified.status_code == 200
-    assert verified.json()["code"] == "0000"
+    assert resp.json()["code"] == "0000"
+    assert "user_name" not in resp.json()["response"][0]  # never handed back in-band, only emailed
 
     # the username itself only ever appears in the (captured, not returned) email
     username_email = sent_emails[-1]
@@ -119,17 +114,11 @@ def test_forget_username(api_client, sent_emails):
     assert "erin" in username_email[2]
 
 
-def test_forget_username_wrong_otp_rejected(api_client, sent_emails):
-    api_client.post("/api/v1/auth/register", json={
-        "user_name": "frank", "email": "frank@example.com", "password": "correcthorse",
-    })
-    api_client.post("/api/v1/auth/forget-username", json={"email": "frank@example.com"})
-
-    resp = api_client.post(
-        "/api/v1/auth/forget-username/verify-otp", json={"email": "frank@example.com", "otp": "000000"}
-    )
+def test_forget_username_unknown_email_returns_business_code(api_client, sent_emails):
+    resp = api_client.post("/api/v1/auth/forget-username", json={"email": "nobody@example.com"})
     assert resp.status_code == 200
-    assert resp.json()["code"] == "1006"
+    assert resp.json()["code"] == "1003"
+    assert sent_emails == []  # no email sent for a non-existent account
 
 
 def test_otp_expired_is_rejected(api_client, sent_emails, test_db_engine):

@@ -47,7 +47,10 @@ class ReportStatus(str, Enum):
 
 
 class OtpPurpose(str, Enum):
-    FORGET_USERNAME = "forget_username"
+    # Only forget-password is OTP-gated — forget-username is a plain email lookup, no
+    # verification code involved. A single member today, but kept as an enum (not a
+    # bare constant) since otp_codes.purpose exists precisely to let future OTP-gated
+    # flows share the table without a schema change.
     FORGET_PASSWORD = "forget_password"
 
 

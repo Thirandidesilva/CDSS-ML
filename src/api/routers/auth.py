@@ -1,6 +1,7 @@
-"""Auth endpoints: register, login, forget-username/password (OTP-gated), reset-password.
-None of these require a logged-in user — that's why no route here takes
-`Depends(get_current_user)`, unlike every other router.
+"""Auth endpoints: register, login, forget-username (plain email lookup),
+forget-password (OTP-gated) + reset-password. None of these require a logged-in
+user — that's why no route here takes `Depends(get_current_user)`, unlike every
+other router.
 """
 from __future__ import annotations
 
@@ -104,43 +105,21 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 @router.post("/forget-username", responses={
     **success_variants(
-        ("found", "Account exists — a verification code was emailed", envelope(BusinessCode.SUCCESS, [
-            {"message": "a verification code has been sent to your email"}])),
+        ("found", "Account exists — username emailed", envelope(BusinessCode.SUCCESS, [
+            {"message": "your username has been emailed to you"}])),
         ("not_found", "No account with that email", envelope(BusinessCode.ACCOUNT_NOT_FOUND, [
-            {"message": "no account with that email"}])),
+            {"message": "we couldn't find an account with that email"}])),
     ),
     **SERVER_ERROR,
 })
 def forget_username(payload: ForgetUsernameRequest, db: Session = Depends(get_db)):
+    # No OTP step here (unlike forget-password below) — a username is not a secret
+    # the way a password-reset capability is, so there's nothing worth gating behind
+    # a verification code. One lookup, one email, done.
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is None:
-        raise ApiError(BusinessCode.ACCOUNT_NOT_FOUND, "no account with that email")
+        raise ApiError(BusinessCode.ACCOUNT_NOT_FOUND, "we couldn't find an account with that email")
 
-    code = otp_service.create_otp(db, user, OtpPurpose.FORGET_USERNAME)
-    email_service.send_email(
-        user.email, "Your Pawsitivity verification code",
-        f"Your verification code is {code}. It expires in a few minutes.",
-    )
-    return envelope(BusinessCode.SUCCESS, [{"message": "a verification code has been sent to your email"}])
-
-
-@router.post("/forget-username/verify-otp", responses={
-    **success_variants(
-        ("verified", "Code correct — username emailed", envelope(BusinessCode.SUCCESS, [
-            {"message": "your username has been emailed to you"}])),
-        ("invalid", "Wrong/expired code, or too many attempts", envelope(BusinessCode.OTP_INVALID, [
-            {"message": "invalid or expired code"}])),
-    ),
-    **SERVER_ERROR,
-})
-def forget_username_verify_otp(payload: VerifyOtpRequest, db: Session = Depends(get_db)):
-    user = db.scalar(select(User).where(User.email == payload.email))
-    if user is None:
-        # Not ACCOUNT_NOT_FOUND here — this endpoint doesn't re-confirm account
-        # existence a second time; a bad email and a bad code look the same.
-        raise ApiError(BusinessCode.OTP_INVALID, "invalid or expired code")
-
-    otp_service.verify_otp(db, user, OtpPurpose.FORGET_USERNAME, payload.otp)
     email_service.send_email(
         user.email, "Your Pawsitivity username", f"Your username is: {user.user_name}",
     )
