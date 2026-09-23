@@ -173,3 +173,98 @@ def test_get_all_assessments_groups_by_dog_id(owner_with_dog, test_db_engine):
     assert "dog_id" not in group["assessments"][0]  # hoisted out, not repeated per item
     assert len(group["assessments"]) == 2
     assert {a["session_number"] for a in group["assessments"]} == {1, 2}
+
+
+def test_stats_on_dog_with_no_assessments(owner_with_dog):
+    client, headers, dog_id = owner_with_dog
+    resp = client.post("/api/v1/assessment/stats", json={"dog_id": dog_id}, headers=headers)
+    assert resp.status_code == 200
+    stats = resp.json()["response"][0]
+    assert stats["assessment_count"] == 0
+    assert stats["theta"] is None
+    assert stats["severity_band_counts"] == {}
+
+
+def test_stats_on_dog_with_assessments(owner_with_dog):
+    client, headers, dog_id = owner_with_dog
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+
+    resp = client.post("/api/v1/assessment/stats", json={"dog_id": dog_id}, headers=headers)
+    assert resp.status_code == 200
+    stats = resp.json()["response"][0]
+    assert stats["assessment_count"] == 2
+    # isolated_pipeline_env only ships params_own.csv, so both submissions share the
+    # same score_model_name — theta's n should equal the full count, not a subset.
+    assert stats["theta"]["n"] == 2
+    assert isinstance(stats["theta"]["average"], float)
+    assert isinstance(stats["theta_se"]["average"], float)
+    assert isinstance(stats["rf_confidence"]["average"], float)
+    assert set(stats["subscales"].keys()) == {
+        "separation", "noise", "fear", "aggression", "compulsive", "physiological",
+    }
+    assert sum(stats["severity_band_counts"].values()) == 2
+
+
+def test_stats_on_someone_elses_dog_returns_403(api_client, owner_with_dog):
+    _client, _headers, dog_id = owner_with_dog
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "stats_intruder", "email": "stats_intruder@example.com", "password": "hunter2pass",
+    })
+    login = api_client.post("/api/v1/auth/login", json={
+        "user_name_or_email": "stats_intruder", "password": "hunter2pass",
+    })
+    other_headers = {"Authorization": f"Bearer {login.json()['response'][0]['access_token']}"}
+
+    resp = api_client.post("/api/v1/assessment/stats", json={"dog_id": dog_id}, headers=other_headers)
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "2002"
+
+
+def test_weekly_summary_with_no_activity(owner_with_dog):
+    client, headers, dog_id = owner_with_dog
+    resp = client.post("/api/v1/assessment/weekly-summary", json={}, headers=headers)
+    assert resp.status_code == 200
+    body = resp.json()["response"][0]
+    assert len(body["dogs"]) == 1
+    dog_summary = body["dogs"][0]
+    assert dog_summary["dog_id"] == dog_id
+    assert len(dog_summary["days"]) == 7
+    assert all(day["assessed"] is False for day in dog_summary["days"])
+
+
+def test_weekly_summary_after_submitting_today(owner_with_dog):
+    from datetime import datetime, timezone
+
+    client, headers, dog_id = owner_with_dog
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+
+    resp = client.post("/api/v1/assessment/weekly-summary", json={}, headers=headers)
+    assert resp.status_code == 200
+    dog_summary = resp.json()["response"][0]["dogs"][0]
+
+    today = datetime.now(timezone.utc).date()
+    todays_entry = next(d for d in dog_summary["days"] if d["date"] == today.isoformat())
+    assert todays_entry["assessed"] is True
+    assert todays_entry["assessment_count"] == 1
+    other_days = [d for d in dog_summary["days"] if d["date"] != today.isoformat()]
+    assert all(d["assessed"] is False for d in other_days)
+
+
+def test_weekly_summary_for_someone_else_returns_403(api_client, owner_with_dog):
+    _client, _headers, _dog_id = owner_with_dog
+    owner_user_id = _client.get("/api/v1/users/me", headers=_headers).json()["response"][0]["user_id"]
+
+    api_client.post("/api/v1/auth/register", json={
+        "user_name": "weekly_intruder", "email": "weekly_intruder@example.com", "password": "hunter2pass",
+    })
+    login = api_client.post("/api/v1/auth/login", json={
+        "user_name_or_email": "weekly_intruder", "password": "hunter2pass",
+    })
+    other_headers = {"Authorization": f"Bearer {login.json()['response'][0]['access_token']}"}
+
+    resp = api_client.post(
+        "/api/v1/assessment/weekly-summary", json={"user_id": owner_user_id}, headers=other_headers
+    )
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "2002"

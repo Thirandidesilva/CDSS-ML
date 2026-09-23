@@ -5,6 +5,7 @@ persistence logic lives in services/scoring.py so it stays out of the router.
 from __future__ import annotations
 
 import sys
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
@@ -20,9 +21,9 @@ from ..auth import get_current_user, require_role  # noqa: E402
 from ..codes import BusinessCode  # noqa: E402
 from ..db import get_db  # noqa: E402
 from ..deps import get_owned_assessment, get_owned_dog  # noqa: E402
-from ..enums import AssessmentStatus, UserRole  # noqa: E402
-from ..errors import envelope  # noqa: E402
-from ..models import Assessment, User  # noqa: E402
+from ..enums import AssessmentStatus, DogStatus, UserRole  # noqa: E402
+from ..errors import ApiError, envelope  # noqa: E402
+from ..models import Assessment, Dog, User  # noqa: E402
 from ..openapi_responses import (  # noqa: E402
     ADMIN_ONLY,
     ASSESSMENT_NOT_FOUND,
@@ -38,7 +39,9 @@ from ..schemas.assessment import (  # noqa: E402
     AssessmentOut,
     AssessmentSubmitRequest,
     DogIdRequest,
+    WeeklySummaryRequest,
 )
+from ..services.assessment_stats import build_weekly_summary, compute_dog_stats  # noqa: E402
 from ..services.scoring import run_assessment  # noqa: E402
 
 router = APIRouter(prefix="/api/v1/assessment", tags=["assessment"])
@@ -77,6 +80,34 @@ _WITHHELD_ASSESSMENT_EXAMPLE = {
 _GROUPED_ASSESSMENTS_EXAMPLE = {
     "dog_id": _ASSESSMENT_EXAMPLE["dog_id"],
     "assessments": [{k: v for k, v in _ASSESSMENT_EXAMPLE.items() if k != "dog_id"}],
+}
+_STATS_EXAMPLE = {
+    "assessment_count": 5,
+    "theta": {"average": 0.42, "median": 0.38, "n": 3, "score_model_name": "params_calibrated.csv"},
+    "theta_se": {"average": 0.31, "median": 0.29},
+    "rf_confidence": {"average": 0.81, "median": 0.83},
+    "subscales": {
+        "separation": {"average": 1.9, "median": 2.0}, "noise": {"average": 2.4, "median": 2.5},
+        "fear": {"average": 0.6, "median": 0.5}, "aggression": {"average": 1.2, "median": 1.0},
+        "compulsive": {"average": 0.8, "median": 1.0}, "physiological": {"average": 1.7, "median": 1.5},
+    },
+    "severity_band_counts": {"Low": 2, "Moderate": 3},
+    "phenotype_counts": {"Noise-specific": 4, "Mild": 1},
+}
+_WEEKLY_SUMMARY_EXAMPLE = {
+    "week_start": "2026-09-22", "week_end": "2026-09-28",
+    "dogs": [{
+        "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456", "dog_name": "Rex",
+        "days": [
+            {"date": "2026-09-22", "weekday": "Monday", "assessed": True, "assessment_count": 1},
+            {"date": "2026-09-23", "weekday": "Tuesday", "assessed": False, "assessment_count": 0},
+            {"date": "2026-09-24", "weekday": "Wednesday", "assessed": False, "assessment_count": 0},
+            {"date": "2026-09-25", "weekday": "Thursday", "assessed": False, "assessment_count": 0},
+            {"date": "2026-09-26", "weekday": "Friday", "assessed": False, "assessment_count": 0},
+            {"date": "2026-09-27", "weekday": "Saturday", "assessed": False, "assessment_count": 0},
+            {"date": "2026-09-28", "weekday": "Sunday", "assessed": False, "assessment_count": 0},
+        ],
+    }],
 }
 
 
@@ -200,3 +231,66 @@ def delete_assessment(
     assessment.status = AssessmentStatus.DELETED
     db.commit()
     return envelope(BusinessCode.SUCCESS, [{"message": "assessment deleted"}])
+
+
+@router.post("/stats", responses={
+    **success(envelope(BusinessCode.SUCCESS, [_STATS_EXAMPLE])),
+    **UNAUTHORIZED,
+    **FORBIDDEN,
+    **DOG_NOT_FOUND,
+    **SERVER_ERROR,
+})
+def get_assessment_stats(
+    payload: DogIdRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    dog = get_owned_dog(payload.dog_id, user=user, db=db)
+    rows = db.scalars(
+        select(Assessment)
+        .where(Assessment.dog_id == dog.dog_id, Assessment.status != AssessmentStatus.DELETED)
+        .order_by(Assessment.created_at)
+    ).all()
+    return envelope(BusinessCode.SUCCESS, [compute_dog_stats(rows)])
+
+
+@router.post("/weekly-summary", responses={
+    **success(envelope(BusinessCode.SUCCESS, [_WEEKLY_SUMMARY_EXAMPLE])),
+    **UNAUTHORIZED,
+    **FORBIDDEN,
+    **SERVER_ERROR,
+})
+def get_weekly_summary(
+    payload: WeeklySummaryRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Same admin-override shape as dogs/list: omitted user_id (or your own) -> your own
+    # week; any other user_id -> that user's week, admin only.
+    target_user_id = payload.user_id or user.user_id
+    if target_user_id != user.user_id and user.role != UserRole.ADMIN:
+        raise ApiError(BusinessCode.OWNERSHIP_VIOLATION, "not your weekly summary")
+
+    # Monday-Sunday of the CURRENT week, UTC — this project has no per-user timezone
+    # support anywhere (see report_pdf_data.py), so "current week" means the server's.
+    today = datetime.now(timezone.utc).date()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+
+    dogs = db.scalars(
+        select(Dog).where(Dog.user_id == target_user_id, Dog.status != DogStatus.DELETED)
+    ).all()
+    # created_at is a datetime column — comparing it against bare date objects behaves
+    # inconsistently across dialects (especially SQLite's string-based comparison), so
+    # the bounds are built as explicit UTC datetimes instead.
+    range_start = datetime.combine(week_start, time.min, tzinfo=timezone.utc)
+    range_end = datetime.combine(week_end + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    assessments = db.scalars(
+        select(Assessment).where(
+            Assessment.dog_id.in_([dog.dog_id for dog in dogs]),
+            Assessment.status != AssessmentStatus.DELETED,
+            Assessment.created_at >= range_start,
+            Assessment.created_at < range_end,
+        )
+    ).all()
+    return envelope(BusinessCode.SUCCESS, [build_weekly_summary(dogs, assessments, week_start)])

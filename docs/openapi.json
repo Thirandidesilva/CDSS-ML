@@ -2452,6 +2452,340 @@
         }
       }
     },
+    "/api/v1/assessment/stats": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get Assessment Stats",
+        "operationId": "get_assessment_stats_api_v1_assessment_stats_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogIdRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "assessment_count": 5,
+                      "theta": {
+                        "average": 0.42,
+                        "median": 0.38,
+                        "n": 3,
+                        "score_model_name": "params_calibrated.csv"
+                      },
+                      "theta_se": {
+                        "average": 0.31,
+                        "median": 0.29
+                      },
+                      "rf_confidence": {
+                        "average": 0.81,
+                        "median": 0.83
+                      },
+                      "subscales": {
+                        "separation": {
+                          "average": 1.9,
+                          "median": 2.0
+                        },
+                        "noise": {
+                          "average": 2.4,
+                          "median": 2.5
+                        },
+                        "fear": {
+                          "average": 0.6,
+                          "median": 0.5
+                        },
+                        "aggression": {
+                          "average": 1.2,
+                          "median": 1.0
+                        },
+                        "compulsive": {
+                          "average": 0.8,
+                          "median": 1.0
+                        },
+                        "physiological": {
+                          "average": 1.7,
+                          "median": 1.5
+                        }
+                      },
+                      "severity_band_counts": {
+                        "Low": 2,
+                        "Moderate": 3
+                      },
+                      "phenotype_counts": {
+                        "Noise-specific": 4,
+                        "Mild": 1
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dog does not exist (or was deleted)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2001",
+                  "response": [
+                    {
+                      "message": "dog not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/weekly-summary": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Get Weekly Summary",
+        "operationId": "get_weekly_summary_api_v1_assessment_weekly_summary_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeeklySummaryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "week_start": "2026-09-22",
+                      "week_end": "2026-09-28",
+                      "dogs": [
+                        {
+                          "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
+                          "dog_name": "Rex",
+                          "days": [
+                            {
+                              "date": "2026-09-22",
+                              "weekday": "Monday",
+                              "assessed": true,
+                              "assessment_count": 1
+                            },
+                            {
+                              "date": "2026-09-23",
+                              "weekday": "Tuesday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            },
+                            {
+                              "date": "2026-09-24",
+                              "weekday": "Wednesday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            },
+                            {
+                              "date": "2026-09-25",
+                              "weekday": "Thursday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            },
+                            {
+                              "date": "2026-09-26",
+                              "weekday": "Friday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            },
+                            {
+                              "date": "2026-09-27",
+                              "weekday": "Saturday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            },
+                            {
+                              "date": "2026-09-28",
+                              "weekday": "Sunday",
+                              "assessed": false,
+                              "assessment_count": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, invalid, or expired bearer token",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1000",
+                  "response": [
+                    {
+                      "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/report/generate": {
       "post": {
         "tags": [
@@ -3535,6 +3869,25 @@
           "otp"
         ],
         "title": "VerifyOtpRequest"
+      },
+      "WeeklySummaryRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "WeeklySummaryRequest"
       }
     }
   }

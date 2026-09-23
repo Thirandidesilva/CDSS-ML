@@ -45,7 +45,8 @@ class AssessmentSubmitRequest(BaseModel):
 
 class DogIdRequest(BaseModel):
     # Kept local to this file rather than imported from schemas/dog.py — each
-    # schemas/X.py in this project is self-contained. Used by assessment/list-by-dog.
+    # schemas/X.py in this project is self-contained. Used by assessment/list-by-dog
+    # and assessment/stats.
     model_config = ConfigDict(extra="forbid")
 
     dog_id: uuid.UUID
@@ -57,6 +58,14 @@ class AssessmentIdRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     assessment_id: uuid.UUID
+
+
+class WeeklySummaryRequest(BaseModel):
+    # Same admin-override shape as dogs.py's DogListRequest: omitted (or your own id)
+    # means "my week"; any other user_id means "that user's week," admin only.
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: Optional[uuid.UUID] = None
 
 
 class QuestionOut(BaseModel):
