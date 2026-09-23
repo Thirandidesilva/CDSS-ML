@@ -1,6 +1,6 @@
-"""Dog CRUD endpoints. Every single-dog route (get/update/delete) goes through
-get_owned_dog (deps.py), which does the 404-then-403 ownership check once so it
-doesn't need repeating in each handler below.
+"""Dog CRUD endpoints. Every single-dog route (get/update/delete) calls get_owned_dog
+(deps.py) directly to do the 404-then-403 ownership check — not via Depends() injection,
+since the id now always comes from the parsed request body, never the URL path.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ..codes import BusinessCode
 from ..db import get_db
 from ..deps import get_owned_dog
 from ..enums import DogStatus, UserRole
-from ..errors import envelope
+from ..errors import ApiError, envelope
 from ..models import Dog, User
 from ..openapi_responses import (
     ADMIN_ONLY,
@@ -23,7 +23,7 @@ from ..openapi_responses import (
     UNAUTHORIZED,
     success,
 )
-from ..schemas.dog import DogCreateRequest, DogUpdateRequest
+from ..schemas.dog import DogCreateRequest, DogIdRequest, DogListRequest, DogUpdateRequest
 
 router = APIRouter(prefix="/api/v1/dogs", tags=["dogs"])
 
@@ -74,22 +74,28 @@ def create_dog(
     return envelope(BusinessCode.SUCCESS, [_dog_out(dog)])
 
 
-@router.get("", responses={
+@router.post("/list", responses={
     **success(envelope(BusinessCode.SUCCESS, [_DOG_EXAMPLE])),
     **UNAUTHORIZED,
+    **FORBIDDEN,
     **SERVER_ERROR,
 })
-def list_dogs(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Only the caller's OWN dogs — for every owner's dogs, see get_all_dogs below.
+def list_dogs(
+    payload: DogListRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Omitted user_id (or your own id) -> your own dogs. Any other user_id -> that
+    # user's dogs, admin only — for every owner's dogs at once, see get_all_dogs below.
+    target_user_id = payload.user_id or user.user_id
+    if target_user_id != user.user_id and user.role != UserRole.ADMIN:
+        raise ApiError(BusinessCode.OWNERSHIP_VIOLATION, "not your dogs")
     dogs = db.scalars(
-        select(Dog).where(Dog.user_id == user.user_id, Dog.status != DogStatus.DELETED)
+        select(Dog).where(Dog.user_id == target_user_id, Dog.status != DogStatus.DELETED)
     ).all()
     return envelope(BusinessCode.SUCCESS, [_dog_out(d) for d in dogs])
 
 
-# Registered BEFORE "/{dog_id}" below — FastAPI matches routes in registration order,
-# so GET /api/v1/dogs/all must be defined here or it would instead be swallowed by
-# "/{dog_id}" (with dog_id="all", which would then fail UUID parsing).
 @router.get("/all", responses={
     **success(envelope(BusinessCode.SUCCESS, [_DOG_EXAMPLE])),
     **UNAUTHORIZED,
@@ -101,20 +107,23 @@ def get_all_dogs(_admin: User = Depends(require_role(UserRole.ADMIN)), db: Sessi
     return envelope(BusinessCode.SUCCESS, [_dog_out(d) for d in dogs])
 
 
-@router.get("/{dog_id}", responses={
+@router.post("/get", responses={
     **success(envelope(BusinessCode.SUCCESS, [_DOG_EXAMPLE])),
     **UNAUTHORIZED,
     **FORBIDDEN,
     **DOG_NOT_FOUND,
     **SERVER_ERROR,
 })
-def get_dog(dog: Dog = Depends(get_owned_dog)):
-    # get_owned_dog reads "dog_id" out of the URL itself (see deps.py) — nothing here
-    # has to mention it explicitly.
+def get_dog(
+    payload: DogIdRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    dog = get_owned_dog(payload.dog_id, user=user, db=db)
     return envelope(BusinessCode.SUCCESS, [_dog_out(dog)])
 
 
-@router.post("/update/{dog_id}", responses={
+@router.post("/update", responses={
     **success(envelope(BusinessCode.SUCCESS, [_DOG_EXAMPLE])),
     **UNAUTHORIZED,
     **FORBIDDEN,
@@ -123,10 +132,10 @@ def get_dog(dog: Dog = Depends(get_owned_dog)):
 })
 def update_dog(
     payload: DogUpdateRequest,
-    dog: Dog = Depends(get_owned_dog),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    dog = get_owned_dog(payload.dog_id, user=user, db=db)
     for field in ("dog_name", "dog_breed", "dog_age", "dog_gender", "profile_picture"):
         value = getattr(payload, field)
         if value is not None:
@@ -137,7 +146,7 @@ def update_dog(
     return envelope(BusinessCode.SUCCESS, [_dog_out(dog)])
 
 
-@router.post("/delete/{dog_id}", responses={
+@router.post("/delete", responses={
     **success(envelope(BusinessCode.SUCCESS, [{"message": "dog deleted"}])),
     **UNAUTHORIZED,
     **FORBIDDEN,
@@ -145,12 +154,11 @@ def update_dog(
     **SERVER_ERROR,
 })
 def delete_dog(
-    dog: Dog = Depends(get_owned_dog),
+    payload: DogIdRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # POST, not GET, even though there's no request body — a GET here would be an
-    # unsafe destructive action (browsers/proxies can cache or prefetch GETs).
+    dog = get_owned_dog(payload.dog_id, user=user, db=db)
     dog.status = DogStatus.DELETED
     dog.updated_by = user.user_id
     db.commit()

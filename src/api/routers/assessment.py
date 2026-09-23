@@ -22,7 +22,7 @@ from ..db import get_db  # noqa: E402
 from ..deps import get_owned_assessment, get_owned_dog  # noqa: E402
 from ..enums import AssessmentStatus, UserRole  # noqa: E402
 from ..errors import envelope  # noqa: E402
-from ..models import Assessment, Dog, User  # noqa: E402
+from ..models import Assessment, User  # noqa: E402
 from ..openapi_responses import (  # noqa: E402
     ADMIN_ONLY,
     ASSESSMENT_NOT_FOUND,
@@ -33,7 +33,12 @@ from ..openapi_responses import (  # noqa: E402
     success,
     success_variants,
 )
-from ..schemas.assessment import AssessmentOut, AssessmentSubmitRequest  # noqa: E402
+from ..schemas.assessment import (  # noqa: E402
+    AssessmentIdRequest,
+    AssessmentOut,
+    AssessmentSubmitRequest,
+    DogIdRequest,
+)
 from ..services.scoring import run_assessment  # noqa: E402
 
 router = APIRouter(prefix="/api/v1/assessment", tags=["assessment"])
@@ -65,6 +70,13 @@ _WITHHELD_ASSESSMENT_EXAMPLE = {
         "withheld": True,
         "withheld_reason": "theta SE 0.536 exceeds 0.5; severity band is too imprecise to act on",
     },
+}
+# /assessment/all groups by dog_id (one admin call spans every owner's dogs, so a flat
+# list mixing them together is awkward to filter client-side) — dog_id is hoisted out
+# to the group level instead of repeated inside every assessment entry.
+_GROUPED_ASSESSMENTS_EXAMPLE = {
+    "dog_id": _ASSESSMENT_EXAMPLE["dog_id"],
+    "assessments": [{k: v for k, v in _ASSESSMENT_EXAMPLE.items() if k != "dog_id"}],
 }
 
 
@@ -107,27 +119,44 @@ def submit_assessment(
 
 
 @router.get("/all", responses={
-    **success(envelope(BusinessCode.SUCCESS, [_ASSESSMENT_EXAMPLE])),
+    **success(envelope(BusinessCode.SUCCESS, [_GROUPED_ASSESSMENTS_EXAMPLE])),
     **UNAUTHORIZED,
     **ADMIN_ONLY,
     **SERVER_ERROR,
 })
 def get_all_assessments(_admin: User = Depends(require_role(UserRole.ADMIN)), db: Session = Depends(get_db)):
+    # Ordered by dog_id first so rows for the same dog land together — grouping below
+    # then just has to append in the order they arrive, no separate sort needed.
     rows = db.scalars(
-        select(Assessment).where(Assessment.status != AssessmentStatus.DELETED)
+        select(Assessment)
+        .where(Assessment.status != AssessmentStatus.DELETED)
+        .order_by(Assessment.dog_id, Assessment.created_at)
     ).all()
-    return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(r).model_dump(mode="json") for r in rows])
+
+    grouped: dict = {}
+    for r in rows:
+        item = AssessmentOut.from_orm_row(r).model_dump(mode="json")
+        dog_id = item.pop("dog_id")  # hoisted out to the group level, not repeated per item
+        grouped.setdefault(dog_id, []).append(item)
+
+    response = [{"dog_id": dog_id, "assessments": items} for dog_id, items in grouped.items()]
+    return envelope(BusinessCode.SUCCESS, response)
 
 
-@router.get("/dog/{dog_id}", responses={
+@router.post("/list-by-dog", responses={
     **success(envelope(BusinessCode.SUCCESS, [_ASSESSMENT_EXAMPLE])),
     **UNAUTHORIZED,
     **FORBIDDEN,
     **DOG_NOT_FOUND,
     **SERVER_ERROR,
 })
-def list_dog_assessments(dog: Dog = Depends(get_owned_dog), db: Session = Depends(get_db)):
-    # get_owned_dog already confirmed this caller may see this dog's data.
+def list_dog_assessments(
+    payload: DogIdRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # get_owned_dog confirms this caller may see this dog's data before anything else runs.
+    dog = get_owned_dog(payload.dog_id, user=user, db=db)
     rows = db.scalars(
         select(Assessment)
         .where(Assessment.dog_id == dog.dog_id, Assessment.status != AssessmentStatus.DELETED)
@@ -136,18 +165,23 @@ def list_dog_assessments(dog: Dog = Depends(get_owned_dog), db: Session = Depend
     return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(r).model_dump(mode="json") for r in rows])
 
 
-@router.get("/{assessment_id}", responses={
+@router.post("/get", responses={
     **success(envelope(BusinessCode.SUCCESS, [_ASSESSMENT_EXAMPLE])),
     **UNAUTHORIZED,
     **FORBIDDEN,
     **ASSESSMENT_NOT_FOUND,
     **SERVER_ERROR,
 })
-def get_assessment_result(assessment: Assessment = Depends(get_owned_assessment)):
+def get_assessment_result(
+    payload: AssessmentIdRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    assessment = get_owned_assessment(payload.assessment_id, user=user, db=db)
     return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(assessment).model_dump(mode="json")])
 
 
-@router.post("/delete/{assessment_id}", responses={
+@router.post("/delete", responses={
     **success(envelope(BusinessCode.SUCCESS, [{"message": "assessment deleted"}])),
     **UNAUTHORIZED,
     **FORBIDDEN,
@@ -155,12 +189,14 @@ def get_assessment_result(assessment: Assessment = Depends(get_owned_assessment)
     **SERVER_ERROR,
 })
 def delete_assessment(
-    assessment: Assessment = Depends(get_owned_assessment),
+    payload: AssessmentIdRequest,
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     # Soft delete — the IRTResponse rows and any generated reports stay in the DB,
     # they just no longer show up in list/get results (see the ".status != DELETED"
     # filters above and in services/report.py's callers).
+    assessment = get_owned_assessment(payload.assessment_id, user=user, db=db)
     assessment.status = AssessmentStatus.DELETED
     db.commit()
     return envelope(BusinessCode.SUCCESS, [{"message": "assessment deleted"}])

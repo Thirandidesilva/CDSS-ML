@@ -106,18 +106,22 @@ def test_list_dog_assessment_and_get_result(owner_with_dog):
     )
     assessment_id = submitted.json()["response"][0]["assessment_id"]
 
-    listed = client.get(f"/api/v1/assessment/dog/{dog_id}", headers=headers)
+    listed = client.post("/api/v1/assessment/list-by-dog", json={"dog_id": dog_id}, headers=headers)
     assert listed.status_code == 200
     assert any(a["assessment_id"] == assessment_id for a in listed.json()["response"])
 
-    result = client.get(f"/api/v1/assessment/{assessment_id}", headers=headers)
+    result = client.post("/api/v1/assessment/get", json={"assessment_id": assessment_id}, headers=headers)
     assert result.status_code == 200
     assert result.json()["response"][0]["assessment_id"] == assessment_id
 
 
 def test_get_nonexistent_assessment_returns_404(registered_owner):
     client, headers = registered_owner
-    resp = client.get("/api/v1/assessment/00000000-0000-0000-0000-000000000000", headers=headers)
+    resp = client.post(
+        "/api/v1/assessment/get",
+        json={"assessment_id": "00000000-0000-0000-0000-000000000000"},
+        headers=headers,
+    )
     assert resp.status_code == 404
     assert resp.json()["code"] == "3001"
 
@@ -129,10 +133,10 @@ def test_delete_assessment_then_disappears_from_list(owner_with_dog):
     )
     assessment_id = submitted.json()["response"][0]["assessment_id"]
 
-    deleted = client.post(f"/api/v1/assessment/delete/{assessment_id}", headers=headers)
+    deleted = client.post("/api/v1/assessment/delete", json={"assessment_id": assessment_id}, headers=headers)
     assert deleted.status_code == 200
 
-    listed = client.get(f"/api/v1/assessment/dog/{dog_id}", headers=headers)
+    listed = client.post("/api/v1/assessment/list-by-dog", json={"dog_id": dog_id}, headers=headers)
     assert all(a["assessment_id"] != assessment_id for a in listed.json()["response"])
 
 
@@ -141,3 +145,31 @@ def test_get_all_assessment_requires_admin(owner_with_dog):
     resp = client.get("/api/v1/assessment/all", headers=headers)
     assert resp.status_code == 403
     assert resp.json()["code"] == "2002"
+
+
+def test_get_all_assessments_groups_by_dog_id(owner_with_dog, test_db_engine):
+    client, headers, dog_id = owner_with_dog
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+
+    # No self-service way to become admin — elevate directly via the DB, same technique
+    # test_otp_expired_is_rejected already uses for direct row manipulation in tests.
+    from sqlalchemy.orm import Session
+
+    from api.enums import UserRole
+    from api.models import User
+
+    with Session(test_db_engine) as db:
+        owner = db.query(User).filter(User.user_name == "owner1").one()
+        owner.role = UserRole.ADMIN
+        db.commit()
+
+    resp = client.get("/api/v1/assessment/all", headers=headers)
+    assert resp.status_code == 200
+    groups = resp.json()["response"]
+    assert len(groups) == 1  # one dog only
+    group = groups[0]
+    assert group["dog_id"] == dog_id
+    assert "dog_id" not in group["assessments"][0]  # hoisted out, not repeated per item
+    assert len(group["assessments"]) == 2
+    assert {a["session_number"] for a in group["assessments"]} == {1, 2}

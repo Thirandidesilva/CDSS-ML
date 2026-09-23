@@ -43,6 +43,22 @@ class AssessmentSubmitRequest(BaseModel):
     Q15: int = Field(ge=0, le=4, description=run_pipeline.ITEM_TEXT["Q15"])
 
 
+class DogIdRequest(BaseModel):
+    # Kept local to this file rather than imported from schemas/dog.py — each
+    # schemas/X.py in this project is self-contained. Used by assessment/list-by-dog.
+    model_config = ConfigDict(extra="forbid")
+
+    dog_id: uuid.UUID
+
+
+class AssessmentIdRequest(BaseModel):
+    # Every id-bearing assessment endpoint takes the id in the body, never in the URL
+    # path — used by assessment/get and assessment/delete.
+    model_config = ConfigDict(extra="forbid")
+
+    assessment_id: uuid.UUID
+
+
 class QuestionOut(BaseModel):
     # What GET /assessment/questions returns — one row per item, for a client to
     # render the questionnaire without hardcoding the wording itself.

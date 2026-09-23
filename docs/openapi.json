@@ -207,12 +207,12 @@
                 "schema": {},
                 "examples": {
                   "found": {
-                    "summary": "Account exists \u2014 a verification code was emailed",
+                    "summary": "Account exists \u2014 username emailed",
                     "value": {
                       "code": "0000",
                       "response": [
                         {
-                          "message": "a verification code has been sent to your email"
+                          "message": "your username has been emailed to you"
                         }
                       ]
                     }
@@ -223,85 +223,7 @@
                       "code": "1003",
                       "response": [
                         {
-                          "message": "no account with that email"
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unhandled server error",
-            "content": {
-              "application/json": {
-                "example": {
-                  "code": "9000",
-                  "response": [
-                    {
-                      "message": "internal server error"
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/auth/forget-username/verify-otp": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Forget Username Verify Otp",
-        "operationId": "forget_username_verify_otp_api_v1_auth_forget_username_verify_otp_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyOtpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "200 covers both success and expected business-code outcomes \u2014 see examples",
-            "content": {
-              "application/json": {
-                "schema": {},
-                "examples": {
-                  "verified": {
-                    "summary": "Code correct \u2014 username emailed",
-                    "value": {
-                      "code": "0000",
-                      "response": [
-                        {
-                          "message": "your username has been emailed to you"
-                        }
-                      ]
-                    }
-                  },
-                  "invalid": {
-                    "summary": "Wrong/expired code, or too many attempts",
-                    "value": {
-                      "code": "1006",
-                      "response": [
-                        {
-                          "message": "invalid or expired code"
+                          "message": "we couldn't find an account with that email"
                         }
                       ]
                     }
@@ -1083,13 +1005,13 @@
         }
       }
     },
-    "/api/v1/dogs": {
-      "get": {
+    "/api/v1/dogs/list": {
+      "post": {
         "tags": [
           "dogs"
         ],
         "summary": "List Dogs",
-        "operationId": "list_dogs_api_v1_dogs_get",
+        "operationId": "list_dogs_api_v1_dogs_list_post",
         "parameters": [
           {
             "name": "authorization",
@@ -1108,6 +1030,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogListRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -1139,6 +1071,21 @@
                   "response": [
                     {
                       "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Authenticated, but this resource belongs to someone else",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "2002",
+                  "response": [
+                    {
+                      "message": "not your dog"
                     }
                   ]
                 }
@@ -1278,24 +1225,14 @@
         }
       }
     },
-    "/api/v1/dogs/{dog_id}": {
-      "get": {
+    "/api/v1/dogs/get": {
+      "post": {
         "tags": [
           "dogs"
         ],
         "summary": "Get Dog",
-        "operationId": "get_dog_api_v1_dogs__dog_id__get",
+        "operationId": "get_dog_api_v1_dogs_get_post",
         "parameters": [
-          {
-            "name": "dog_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Dog Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -1313,6 +1250,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogIdRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -1408,24 +1355,14 @@
         }
       }
     },
-    "/api/v1/dogs/update/{dog_id}": {
+    "/api/v1/dogs/update": {
       "post": {
         "tags": [
           "dogs"
         ],
         "summary": "Update Dog",
-        "operationId": "update_dog_api_v1_dogs_update__dog_id__post",
+        "operationId": "update_dog_api_v1_dogs_update_post",
         "parameters": [
-          {
-            "name": "dog_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Dog Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -1548,24 +1485,14 @@
         }
       }
     },
-    "/api/v1/dogs/delete/{dog_id}": {
+    "/api/v1/dogs/delete": {
       "post": {
         "tags": [
           "dogs"
         ],
         "summary": "Delete Dog",
-        "operationId": "delete_dog_api_v1_dogs_delete__dog_id__post",
+        "operationId": "delete_dog_api_v1_dogs_delete_post",
         "parameters": [
-          {
-            "name": "dog_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Dog Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -1583,6 +1510,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogIdRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -1990,34 +1927,38 @@
                   "code": "0000",
                   "response": [
                     {
-                      "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
                       "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
-                      "session_number": 1,
-                      "theta_calibrated": -0.376,
-                      "theta_se": 0.309,
-                      "severity_band": "Low",
-                      "phenotype": "Noise-specific",
-                      "rf_confidence": 0.79,
-                      "flag_irt": false,
-                      "flag_rf": false,
-                      "subscales": {
-                        "separation": 1.75,
-                        "noise": 2.0,
-                        "fear": 0.5,
-                        "aggression": 4.0,
-                        "compulsive": 2.0,
-                        "physiological": 1.5
-                      },
-                      "recommendation": {
-                        "rule_id": "R-NOISE-LOW",
-                        "urgency": "routine",
-                        "action": "No behavioural intervention indicated by this screening...",
-                        "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
-                        "withheld": false,
-                        "caveats": [
-                          "This is a behavioural screening result, not a veterinary diagnosis."
-                        ]
-                      }
+                      "assessments": [
+                        {
+                          "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
+                          "session_number": 1,
+                          "theta_calibrated": -0.376,
+                          "theta_se": 0.309,
+                          "severity_band": "Low",
+                          "phenotype": "Noise-specific",
+                          "rf_confidence": 0.79,
+                          "flag_irt": false,
+                          "flag_rf": false,
+                          "subscales": {
+                            "separation": 1.75,
+                            "noise": 2.0,
+                            "fear": 0.5,
+                            "aggression": 4.0,
+                            "compulsive": 2.0,
+                            "physiological": 1.5
+                          },
+                          "recommendation": {
+                            "rule_id": "R-NOISE-LOW",
+                            "urgency": "routine",
+                            "action": "No behavioural intervention indicated by this screening...",
+                            "evidence": "MSD Veterinary Manual, Behavior Problems of Dogs...",
+                            "withheld": false,
+                            "caveats": [
+                              "This is a behavioural screening result, not a veterinary diagnosis."
+                            ]
+                          }
+                        }
+                      ]
                     }
                   ]
                 }
@@ -2082,24 +2023,14 @@
         }
       }
     },
-    "/api/v1/assessment/dog/{dog_id}": {
-      "get": {
+    "/api/v1/assessment/list-by-dog": {
+      "post": {
         "tags": [
           "assessment"
         ],
         "summary": "List Dog Assessments",
-        "operationId": "list_dog_assessments_api_v1_assessment_dog__dog_id__get",
+        "operationId": "list_dog_assessments_api_v1_assessment_list_by_dog_post",
         "parameters": [
-          {
-            "name": "dog_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Dog Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -2117,6 +2048,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DogIdRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -2234,24 +2175,14 @@
         }
       }
     },
-    "/api/v1/assessment/{assessment_id}": {
-      "get": {
+    "/api/v1/assessment/get": {
+      "post": {
         "tags": [
           "assessment"
         ],
         "summary": "Get Assessment Result",
-        "operationId": "get_assessment_result_api_v1_assessment__assessment_id__get",
+        "operationId": "get_assessment_result_api_v1_assessment_get_post",
         "parameters": [
-          {
-            "name": "assessment_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Assessment Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -2269,6 +2200,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentIdRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -2386,24 +2327,14 @@
         }
       }
     },
-    "/api/v1/assessment/delete/{assessment_id}": {
+    "/api/v1/assessment/delete": {
       "post": {
         "tags": [
           "assessment"
         ],
         "summary": "Delete Assessment",
-        "operationId": "delete_assessment_api_v1_assessment_delete__assessment_id__post",
+        "operationId": "delete_assessment_api_v1_assessment_delete_post",
         "parameters": [
-          {
-            "name": "assessment_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Assessment Id"
-            }
-          },
           {
             "name": "authorization",
             "in": "header",
@@ -2421,6 +2352,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentIdRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -3000,6 +2941,21 @@
   },
   "components": {
     "schemas": {
+      "AssessmentIdRequest": {
+        "properties": {
+          "assessment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assessment Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "assessment_id"
+        ],
+        "title": "AssessmentIdRequest"
+      },
       "AssessmentSubmitRequest": {
         "properties": {
           "dog_id": {
@@ -3177,8 +3133,47 @@
         ],
         "title": "DogGender"
       },
+      "DogIdRequest": {
+        "properties": {
+          "dog_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dog Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "dog_id"
+        ],
+        "title": "DogIdRequest"
+      },
+      "DogListRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DogListRequest"
+      },
       "DogUpdateRequest": {
         "properties": {
+          "dog_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dog Id"
+          },
           "dog_name": {
             "anyOf": [
               {
@@ -3236,6 +3231,9 @@
         },
         "additionalProperties": false,
         "type": "object",
+        "required": [
+          "dog_id"
+        ],
         "title": "DogUpdateRequest"
       },
       "ForgetPasswordRequest": {
