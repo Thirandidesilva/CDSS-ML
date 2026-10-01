@@ -1,0 +1,20 @@
+{
+  "n": 163,
+  "features": [
+    "Q4",
+    "Q5",
+    "Q6",
+    "Q7",
+    "Q8",
+    "Q9",
+    "Q10",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q15"
+  ],
+  "cv_accuracy": 0.9015,
+  "cv_scheme": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42) \u2014 results/rf_confidence_calibration.csv (referenced by BUILD_BRIEF.md) does not exist in this repo, so a standard scheme was substituted.",
+  "sklearn_version": "1.6.1"
+}

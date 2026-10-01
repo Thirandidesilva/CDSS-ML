@@ -1,0 +1,98 @@
+{
+ "n": 163,
+ "n_items": 12,
+ "n_missing": 0,
+ "grm_r": 1.0,
+ "grm_maxdiff": 0.0009,
+ "rel_observed": 0.761,
+ "rel_prior": 0.809,
+ "se_mean": 0.425,
+ "se_max": 0.671,
+ "bands_own_at_chapter_cuts": {
+  "Low": 112,
+  "Moderate": 30,
+  "High": 21
+ },
+ "bands_stale_popnorm": {
+  "Low": 16,
+  "Moderate": 29,
+  "High": 118
+ },
+ "chapter_claims_bands": {
+  "Low": 98,
+  "Moderate": 24,
+  "High": 41
+ },
+ "cut75": 0.537,
+ "cut90": 1.013,
+ "flag_irt_n": 64,
+ "flag_rf_n": 64,
+ "flag_both": 26,
+ "flag_either": 102,
+ "flag_either_pct": 62.6,
+ "pheno": {
+  "0": {
+   "n": null,
+   "Q7": 3.33,
+   "social": 2.3,
+   "theta_irt": 0.689
+  },
+  "1": {
+   "n": null,
+   "Q7": 1.15,
+   "social": 1.09,
+   "theta_irt": -0.911
+  },
+  "2": {
+   "n": null,
+   "Q7": 3.81,
+   "social": 1.04,
+   "theta_irt": 0.427
+  }
+ },
+ "n_mapped_items": 11,
+ "unmapped": [
+  "Q11"
+ ],
+ "band_width_theta": 0.769,
+ "mdc95_single": 1.508,
+ "mdc_tier1": 0.68,
+ "mdc_tier2": 1.0,
+ "mdc_tier3": 0.18,
+ "rf_acc_benchmark": 0.721,
+ "best_acc": 0.951,
+ "best_model": "Ordinal logistic (proportional odds)",
+ "rf_rank": "7 of 7 (last)",
+ "centroid_vs_rf_complete": {
+  "rule": 0.957,
+  "forest": 0.865
+ },
+ "centroid_vs_rf_3blank": {
+  "rule": 0.819,
+  "forest": 0.782
+ },
+ "macroF1": {
+  "rule": 0.954,
+  "forest": 0.887
+ },
+ "withheld_n": 37,
+ "withheld_pct": 22.7,
+ "pheno_counts_analysis": {
+  "Mild": 61,
+  "Noise-specific": 57,
+  "Generalised": 45
+ },
+ "pheno_counts_centroid": {
+  "Mild": 62,
+  "Noise-specific": 57,
+  "Generalised": 44
+ },
+ "disc_min": [
+  "Q11",
+  0.317
+ ],
+ "disc_max": [
+  "Q8",
+  3.736
+ ]
+}
