@@ -54,4 +54,11 @@ def create_app(*, pdf_renderer: Optional[PdfRenderer] = None) -> FastAPI:
     app.include_router(assessment.router)
     app.include_router(report.router)
 
+    # A tiny liveness check with no auth and no database behind it. The mobile app calls it
+    # when it opens to wake the server (the free hosting plan sleeps when idle), and it is
+    # what a platform health check or uptime monitor should point at.
+    @app.get("/health", include_in_schema=False)
+    def health() -> dict:
+        return {"status": "ok"}
+
     return app
