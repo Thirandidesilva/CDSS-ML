@@ -26,6 +26,7 @@ from ..openapi_responses import (
     FORBIDDEN,
     REPORT_FILE_MISSING,
     REPORT_NOT_FOUND,
+    REPORT_UNAVAILABLE,
     SERVER_ERROR,
     UNAUTHORIZED,
     success,
@@ -80,6 +81,7 @@ def _get_owned_report(report_id: uuid.UUID, user: User, db: Session) -> Report:
     **UNAUTHORIZED,
     **FORBIDDEN,
     **ASSESSMENT_NOT_FOUND,
+    **REPORT_UNAVAILABLE,
     **SERVER_ERROR,
 })
 def generate_report(

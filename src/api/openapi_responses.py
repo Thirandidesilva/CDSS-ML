@@ -73,6 +73,11 @@ REPORT_FILE_MISSING = {404: {
     "content": {"application/json": {"example": _body("4003", "report file missing on disk")}},
 }}
 
+REPORT_UNAVAILABLE = {503: {
+    "description": "This server cannot start Chromium, so it cannot render the PDF",
+    "content": {"application/json": {"example": _body("4004", "pdf reports are not available on this server")}},
+}}
+
 # Only relevant to routes that accept a profile_picture: when it is a base64 image data
 # URI, the API uploads it to Cloudinary, which can fail in these three ways.
 UPLOAD_ERRORS = {
