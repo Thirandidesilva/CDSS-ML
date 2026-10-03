@@ -15,7 +15,7 @@ from ..db import get_db
 from ..enums import OtpPurpose
 from ..errors import ApiError, envelope
 from ..models import User
-from ..openapi_responses import SERVER_ERROR, success_variants
+from ..openapi_responses import EMAIL_SEND_FAILED, SERVER_ERROR, success_variants
 from ..schemas.auth import (
     ForgetPasswordRequest,
     ForgetUsernameRequest,
@@ -110,6 +110,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         ("not_found", "No account with that email", envelope(BusinessCode.ACCOUNT_NOT_FOUND, [
             {"message": "we couldn't find an account with that email"}])),
     ),
+    **EMAIL_SEND_FAILED,
     **SERVER_ERROR,
 })
 def forget_username(payload: ForgetUsernameRequest, db: Session = Depends(get_db)):
@@ -133,6 +134,7 @@ def forget_username(payload: ForgetUsernameRequest, db: Session = Depends(get_db
         ("not_found", "No account with that email", envelope(BusinessCode.ACCOUNT_NOT_FOUND, [
             {"message": "no account with that email"}])),
     ),
+    **EMAIL_SEND_FAILED,
     **SERVER_ERROR,
 })
 def forget_password(payload: ForgetPasswordRequest, db: Session = Depends(get_db)):

@@ -4,9 +4,15 @@ sent_emails test fixture that monkeypatches this exact function don't need to ch
 """
 from __future__ import annotations
 
+import logging
+
 import resend
 
+from ..codes import BusinessCode
 from ..config import get_settings
+from ..errors import ApiError
+
+log = logging.getLogger(__name__)
 
 
 def send_email(to: str, subject: str, body: str) -> None:
@@ -15,9 +21,17 @@ def send_email(to: str, subject: str, body: str) -> None:
     # and have every caller see the patched version.
     settings = get_settings()
     resend.api_key = settings.resend_api_key
-    resend.Emails.send({
-        "from": settings.email_from_address,
-        "to": to,
-        "subject": subject,
-        "text": body,
-    })
+    try:
+        resend.Emails.send({
+            "from": settings.email_from_address,
+            "to": to,
+            "subject": subject,
+            "text": body,
+        })
+    except Exception:
+        # Resend refuses plenty of ordinary cases (sandbox accounts may only email their own
+        # owner, unverified sender domain, bad key, rate limit, network). An unhandled one
+        # used to surface as an opaque 500 / code 9000. The real reason goes to the server
+        # log only; the caller gets a generic, safe message.
+        log.exception("could not send email via Resend (to=%s, subject=%r)", to, subject)
+        raise ApiError(BusinessCode.EMAIL_SEND_FAILED, "we couldn't send the email right now")
