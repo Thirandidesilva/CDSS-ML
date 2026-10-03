@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     reset_token_expire_minutes: int = 15
 
+    # "pool" keeps SQLAlchemy's own connection pool (normal server, e.g. Render). "null"
+    # opens a connection per request and closes it afterwards, for a serverless host where
+    # each instance is short-lived and the database is reached through Supabase's
+    # transaction pooler (port 6543), which does the real pooling.
+    db_pool_mode: str = "pool"
+
     # Resend's HTTP API (not SMTP — avoids the port/implicit-TLS mismatches SMTP hit).
     # Required (no default): fail loudly at startup if unconfigured, same as
     # database_url/jwt_secret. The "from" address must be either Resend's sandbox

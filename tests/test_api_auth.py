@@ -278,3 +278,25 @@ def test_health_does_not_touch_the_database(api_client):
 
     api_client.app.dependency_overrides[get_db] = _broken_db
     assert api_client.get("/health").status_code == 200
+
+
+# ---------------------------------------------------------------- database engine mode
+
+def test_engine_uses_a_pool_by_default_and_no_pool_in_serverless_mode(monkeypatch):
+    from sqlalchemy.pool import NullPool
+
+    from api import db
+    from api.config import get_settings
+
+    url = "postgresql+psycopg://user:pw@localhost:6543/postgres"
+
+    pooled = db.make_engine(url)
+    assert not isinstance(pooled.pool, NullPool)
+
+    monkeypatch.setattr(get_settings(), "db_pool_mode", "null")
+    serverless = db.make_engine(url)
+    assert isinstance(serverless.pool, NullPool)
+    # A throwaway SQLite URL (tests) must not receive Postgres-only connect arguments,
+    # which sqlite3 would reject as soon as it connects.
+    with db.make_engine("sqlite://").connect() as conn:
+        assert conn.dialect.name == "sqlite"
