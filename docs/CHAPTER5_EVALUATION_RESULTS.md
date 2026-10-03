@@ -59,8 +59,7 @@ system it exercises. Full result: `results/functionality_test_report.json`.
 
 **Caveat on the "Report / PDF generation service" row.** These 7 tests pass, but the
 PDF report subsystem they test (`src/api/services/report_chart.py`, `report_pdf.py`,
-`report_pdf_data.py`, `report_sources.py`, `report_storage.py`,
-`src/api/templates/report.html`) is **currently uncommitted work** in this
+`report_pdf_data.py`, `report_sources.py`) is **currently uncommitted work** in this
 repository's git history. State it as in-progress, not as a finished, released
 subsystem, per `docs/THESIS_GUIDE.md` §7 and §12.
 

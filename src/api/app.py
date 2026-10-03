@@ -18,23 +18,18 @@ from . import db  # noqa: E402
 from .config import get_settings  # noqa: E402
 from .errors import register_exception_handlers  # noqa: E402
 from .routers import assessment, auth, dogs, report, users  # noqa: E402
-from .services.report_pdf import LazyPdfRenderer, PdfRenderer  # noqa: E402
+from .services.report_pdf import PdfRenderer  # noqa: E402
 
 
 def create_app(*, pdf_renderer: Optional[PdfRenderer] = None) -> FastAPI:
     # Called exactly once per process (uvicorn on startup, or once per test via the
     # api_client fixture) — everything below runs a single time, not per request.
-    owns_renderer = pdf_renderer is None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # LazyPdfRenderer launches Chromium on the first report request, not here, so a
-        # server without Chromium still boots (see services/report_pdf.py). Tests inject
-        # a ready PdfRenderer instead.
-        app.state.pdf_renderer = pdf_renderer if pdf_renderer is not None else LazyPdfRenderer()
+        # The renderer is stateless (ReportLab, in memory), so tests can swap in a fake.
+        app.state.pdf_renderer = pdf_renderer if pdf_renderer is not None else PdfRenderer()
         yield
-        if owns_renderer:
-            app.state.pdf_renderer.close()
 
     app = FastAPI(title="Canine Anxiety CDSS", description=__doc__, lifespan=lifespan)
 

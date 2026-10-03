@@ -68,14 +68,9 @@ REPORT_NOT_FOUND = {404: {
     "content": {"application/json": {"example": _body("4002", "report not found")}},
 }}
 
-REPORT_FILE_MISSING = {404: {
-    "description": "Report exists but its PDF file is unset or missing on disk",
-    "content": {"application/json": {"example": _body("4003", "report file missing on disk")}},
-}}
-
 REPORT_UNAVAILABLE = {503: {
-    "description": "This server cannot start Chromium, so it cannot render the PDF",
-    "content": {"application/json": {"example": _body("4004", "pdf reports are not available on this server")}},
+    "description": "The PDF could not be rendered",
+    "content": {"application/json": {"example": _body("4004", "the report could not be rendered")}},
 }}
 
 # Only relevant to routes that accept a profile_picture: when it is a base64 image data

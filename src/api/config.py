@@ -18,7 +18,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     reset_token_expire_minutes: int = 15
-    reports_dir: str = "reports/generated"  # gitignored — rendered vet-report PDFs live here
+
+    # "pool" keeps SQLAlchemy's own connection pool (normal server, e.g. Render). "null"
+    # opens a connection per request and closes it afterwards, for a serverless host where
+    # each instance is short-lived and the database is reached through Supabase's
+    # transaction pooler (port 6543), which does the real pooling.
+    db_pool_mode: str = "pool"
 
     # Resend's HTTP API (not SMTP — avoids the port/implicit-TLS mismatches SMTP hit).
     # Required (no default): fail loudly at startup if unconfigured, same as

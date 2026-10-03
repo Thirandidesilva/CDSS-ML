@@ -6,6 +6,7 @@ from typing import Optional
 from collections.abc import Iterator
 
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import get_settings
@@ -23,6 +24,10 @@ def make_engine(database_url: Optional[str] = None):
     url = database_url or get_settings().database_url
     # pool_pre_ping checks a pooled connection is still alive before using it —
     # matters for Supabase, which can silently drop idle connections.
+    if get_settings().db_pool_mode == "null" and url.startswith("postgresql"):
+        # Serverless: no pool of our own, and no server-side prepared statements, which
+        # the pooler's transaction mode (port 6543) cannot carry between connections.
+        return create_engine(url, poolclass=NullPool, connect_args={"prepare_threshold": None})
     return create_engine(url, pool_pre_ping=True)
 
 

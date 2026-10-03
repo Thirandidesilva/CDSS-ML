@@ -1,0 +1,19 @@
+# Everything the deployed API needs is in requirements.txt. This adds what is only needed
+# to develop, test, migrate the database and run the offline research scripts.
+-r requirements.txt
+
+# tests
+pytest==8.4.2
+iniconfig==2.1.0
+pluggy==1.6.0
+packaging==26.3
+pygments==2.21.0
+
+# database migrations (alembic upgrade head)
+alembic==1.16.5
+mako==1.3.12
+markupsafe==3.0.3
+
+# offline data scripts (load_data.py, benchmark_german_dogs.py)
+openpyxl==3.1.5
+et-xmlfile==2.0.0

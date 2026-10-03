@@ -215,7 +215,7 @@ class Report(Base):
     generated_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id"), nullable=False)
     generated_at: Mapped[datetime] = mapped_column(default=_now)
     report_format: Mapped[str] = mapped_column(String, default="json")
-    filepath: Mapped[Optional[str]] = mapped_column(String)  # reserved for a future on-disk PDF
+    filepath: Mapped[Optional[str]] = mapped_column(String)  # unused: the PDF is rendered on demand, never stored
     content: Mapped[dict] = mapped_column(JSON, nullable=False)  # the full report, snapshotted
     status: Mapped[ReportStatus] = mapped_column(
         SAEnum(ReportStatus, native_enum=False, values_callable=lambda e: [m.value for m in e]),

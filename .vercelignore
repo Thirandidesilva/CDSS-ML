@@ -1,0 +1,15 @@
+# Not needed to serve the API, and some of it must never be uploaded.
+.env
+.venv
+.git
+.claude
+.pytest_cache
+__pycache__
+tests
+docs
+handoff
+alembic
+alembic.ini
+data/raw
+results/vet_sheet_key_DO_NOT_SHARE.csv
+reports

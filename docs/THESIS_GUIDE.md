@@ -220,7 +220,7 @@ section.
 
 **Stack:** FastAPI 0.128 + SQLAlchemy 2.0 (Postgres in production, SQLite in tests) +
 Alembic migrations + Pydantic 2 validation + JWT (`pyjwt`) + bcrypt password hashing +
-Playwright (headless Chromium) for PDF rendering + Resend for transactional email.
+ReportLab for PDF rendering + Resend for transactional email.
 Full list in `requirements.txt`.
 
 **Database schema** (`src/api/models.py`, seven tables, Alembic migrations in
@@ -239,18 +239,16 @@ attempts can be capped against brute force (`src/api/services/otp.py`,
 `src/api/routers/auth.py`).
 
 **Report generation:** `POST /api/v1/report/generate` builds a JSON audit snapshot
-(`services/report.py`) *and* renders a vet-facing PDF via Playwright
-(`services/report_pdf.py`, `report_pdf_data.py`, `report_chart.py`, a Jinja2 template at
-`src/api/templates/report.html`). The PDF context assembly
+(`services/report.py`) *and* can draw a vet-facing PDF with ReportLab on demand, at download time, from the stored rows
+(`services/report_pdf.py`, `report_pdf_data.py`, `report_chart.py`; nothing is stored on disk). The PDF context assembly
 (`build_pdf_context` in `report_pdf_data.py`) is worth describing in detail in an
 implementation chapter: it pulls prior assessments for the same dog to compute a
-longitudinal trend banner via `longitudinal.track_theta_change()`, renders an inline SVG
+longitudinal trend banner via `longitudinal.track_theta_change()`, draws a native
 severity chart, and formats the rule engine's recommendation text into bulleted,
 sourced, owner-appropriate language — this is effectively where Phase 12
 ("owner-facing output") actually landed, as a generated document rather than a plain-text
 function. **This PDF subsystem is currently uncommitted work** (`git status` shows
-`report_chart.py`, `report_pdf.py`, `report_pdf_data.py`, `report_sources.py`,
-`report_storage.py`, and `src/api/templates/` as untracked) — flag this to your
+`report_chart.py`, `report_pdf.py`, `report_pdf_data.py` and `report_sources.py` as untracked) — flag this to your
 supervisor/examiner as in-progress if the thesis draft describes it as finished.
 
 **API design conventions worth naming in a thesis:** every endpoint response is wrapped
