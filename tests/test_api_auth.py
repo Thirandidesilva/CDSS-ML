@@ -259,3 +259,22 @@ def test_unknown_email_is_still_reported_before_any_email_is_attempted(api_clien
     monkeypatch.setattr(resend.Emails, "send", lambda params: (_ for _ in ()).throw(AssertionError("must not send")))
     resp = api_client.post("/api/v1/auth/forget-username", json={"email": "nobody@example.com"})
     assert resp.json()["code"] == "1003"
+
+
+# ---------------------------------------------------------------- liveness
+
+def test_health_is_open_and_does_not_need_a_token(api_client):
+    resp = api_client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json() == {"status": "ok"}
+
+
+def test_health_does_not_touch_the_database(api_client):
+    from api.db import get_db
+
+    def _broken_db():
+        raise RuntimeError("the database must not be used by /health")
+        yield  # pragma: no cover  (makes this a generator like the real dependency)
+
+    api_client.app.dependency_overrides[get_db] = _broken_db
+    assert api_client.get("/health").status_code == 200
