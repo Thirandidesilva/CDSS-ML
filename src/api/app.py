@@ -18,7 +18,7 @@ from . import db  # noqa: E402
 from .config import get_settings  # noqa: E402
 from .errors import register_exception_handlers  # noqa: E402
 from .routers import assessment, auth, dogs, report, users  # noqa: E402
-from .services.report_pdf import PdfRenderer  # noqa: E402
+from .services.report_pdf import LazyPdfRenderer, PdfRenderer  # noqa: E402
 
 
 def create_app(*, pdf_renderer: Optional[PdfRenderer] = None) -> FastAPI:
@@ -28,10 +28,10 @@ def create_app(*, pdf_renderer: Optional[PdfRenderer] = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        # PdfRenderer's own constructor launches Chromium on its own dedicated thread
-        # (see services/report_pdf.py) — nothing here touches Playwright directly, so
-        # there's no event-loop-thread restriction to work around.
-        app.state.pdf_renderer = pdf_renderer if pdf_renderer is not None else PdfRenderer()
+        # LazyPdfRenderer launches Chromium on the first report request, not here, so a
+        # server without Chromium still boots (see services/report_pdf.py). Tests inject
+        # a ready PdfRenderer instead.
+        app.state.pdf_renderer = pdf_renderer if pdf_renderer is not None else LazyPdfRenderer()
         yield
         if owns_renderer:
             app.state.pdf_renderer.close()

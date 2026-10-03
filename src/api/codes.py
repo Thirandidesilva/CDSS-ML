@@ -27,6 +27,7 @@ class BusinessCode(str, Enum):
     REPORT_NOT_READY = "4001"
     REPORT_NOT_FOUND = "4002"
     REPORT_FILE_MISSING = "4003"  # DB row exists but its PDF file is unset/gone from disk
+    REPORT_UNAVAILABLE = "4004"   # this server can't start Chromium, so it can't render PDFs
 
     # 5xxx = image upload domain
     UPLOAD_NOT_CONFIGURED = "5001"  # Cloudinary credentials are not set on this deployment
@@ -48,6 +49,7 @@ HTTP_STATUS = {
     BusinessCode.ASSESSMENT_NOT_FOUND: 404,
     BusinessCode.REPORT_NOT_FOUND: 404,
     BusinessCode.REPORT_FILE_MISSING: 404,
+    BusinessCode.REPORT_UNAVAILABLE: 503,
     BusinessCode.INVALID_IMAGE: 400,
     BusinessCode.UPLOAD_FAILED: 502,
     BusinessCode.UPLOAD_NOT_CONFIGURED: 503,
