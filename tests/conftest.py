@@ -67,8 +67,22 @@ def test_db_engine():
     engine.dispose()
 
 
+@pytest.fixture(scope="session")
+def pdf_renderer():
+    """One PdfRenderer (one dedicated-thread headless-Chromium instance) for the whole
+    test session, not one per test — launching Chromium is the expensive part, and
+    api_client is used by nearly every API test, so per-test launches would meaningfully
+    slow down the entire suite.
+    """
+    from api.services.report_pdf import PdfRenderer
+
+    renderer = PdfRenderer()
+    yield renderer
+    renderer.close()
+
+
 @pytest.fixture
-def api_client(isolated_pipeline_env, test_db_engine):
+def api_client(isolated_pipeline_env, test_db_engine, pdf_renderer):
     """A TestClient wired to the throwaway DB above and to the fixture pipeline data,
     so API tests never touch a real database or the real data/reference|results files.
     """
@@ -87,9 +101,14 @@ def api_client(isolated_pipeline_env, test_db_engine):
         finally:
             db.close()
 
-    app = create_app()
+    # pdf_renderer is injected so create_app() doesn't launch its own Chromium per test
+    # (see the fixture above) — it also means create_app() doesn't own/close this one.
+    app = create_app(pdf_renderer=pdf_renderer)
     app.dependency_overrides[get_db] = _override_get_db
-    return TestClient(app)
+    # A context manager, not a bare TestClient(app): Starlette only runs ASGI
+    # startup/shutdown (lifespan) handlers inside __enter__/__exit__.
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture

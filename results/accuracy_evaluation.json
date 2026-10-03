@@ -1,0 +1,93 @@
+{
+  "irt_measurement_model": {
+    "n": 163,
+    "marginal_reliability_observed": 0.7606,
+    "marginal_reliability_prior": 0.8102,
+    "se_theta_mean": 0.4199,
+    "se_theta_max": 0.6862,
+    "discrimination_min": {
+      "item": "Q6",
+      "value": 0.118
+    },
+    "discrimination_max": {
+      "item": "Q8",
+      "value": 4.0734
+    },
+    "archive_reproduction": "see tests/test_irt.py::test_grm_reproduces_archive (r = 1.0000, max diff < 0.001)"
+  },
+  "phenotype_clustering": {
+    "n": 163,
+    "k": 3,
+    "silhouette_score": 0.1237,
+    "stability_ari_min": 0.913,
+    "stability_ari_mean": 0.9489,
+    "n_seeds": 10,
+    "n_comparisons": 9
+  },
+  "random_forest_classifier": {
+    "n": 163,
+    "features": [
+      "Q4",
+      "Q5",
+      "Q6",
+      "Q7",
+      "Q8",
+      "Q9",
+      "Q10",
+      "Q11",
+      "Q12",
+      "Q13",
+      "Q14",
+      "Q15"
+    ],
+    "cv_scheme": "StratifiedKFold(n_splits=5, shuffle=True, random_state=42) \u2014 same scheme as train_rf.py",
+    "accuracy": 0.9018,
+    "macro_f1": 0.9005,
+    "macro_roc_auc_ovr": 0.9828,
+    "per_class": {
+      "Generalised": {
+        "precision": 0.925,
+        "recall": 0.8605,
+        "f1_score": 0.8916,
+        "support": 43
+      },
+      "Mild": {
+        "precision": 0.8788,
+        "recall": 0.9508,
+        "f1_score": 0.9134,
+        "support": 61
+      },
+      "Noise-specific": {
+        "precision": 0.9123,
+        "recall": 0.8814,
+        "f1_score": 0.8966,
+        "support": 59
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "Generalised",
+        "Mild",
+        "Noise-specific"
+      ],
+      "matrix": [
+        [
+          37,
+          4,
+          2
+        ],
+        [
+          0,
+          58,
+          3
+        ],
+        [
+          3,
+          4,
+          52
+        ]
+      ]
+    },
+    "sklearn_version": "1.6.1"
+  }
+}

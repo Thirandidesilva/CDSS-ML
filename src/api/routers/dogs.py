@@ -21,9 +21,11 @@ from ..openapi_responses import (
     FORBIDDEN,
     SERVER_ERROR,
     UNAUTHORIZED,
+    UPLOAD_ERRORS,
     success,
 )
 from ..schemas.dog import DogCreateRequest, DogIdRequest, DogListRequest, DogUpdateRequest
+from ..services.cloudinary import resolve_picture
 
 router = APIRouter(prefix="/api/v1/dogs", tags=["dogs"])
 
@@ -50,6 +52,7 @@ def _dog_out(dog: Dog) -> dict:
 @router.post("/create", responses={
     **success(envelope(BusinessCode.SUCCESS, [_DOG_EXAMPLE])),
     **UNAUTHORIZED,
+    **UPLOAD_ERRORS,
     **SERVER_ERROR,
 })
 def create_dog(
@@ -65,10 +68,13 @@ def create_dog(
         dog_breed=payload.dog_breed,
         dog_age=payload.dog_age,
         dog_gender=payload.dog_gender,
-        profile_picture=payload.profile_picture,
         created_by=user.user_id,
     )
     db.add(dog)
+    # flush assigns dog_id (needed to name the photo) without committing: if the upload
+    # fails, nothing was saved and the request ends with the dog never created.
+    db.flush()
+    dog.profile_picture = resolve_picture(payload.profile_picture, f"pawsitivity/dogs/{dog.dog_id}")
     db.commit()
     db.refresh(dog)
     return envelope(BusinessCode.SUCCESS, [_dog_out(dog)])
@@ -128,6 +134,7 @@ def get_dog(
     **UNAUTHORIZED,
     **FORBIDDEN,
     **DOG_NOT_FOUND,
+    **UPLOAD_ERRORS,
     **SERVER_ERROR,
 })
 def update_dog(
@@ -136,8 +143,10 @@ def update_dog(
     db: Session = Depends(get_db),
 ):
     dog = get_owned_dog(payload.dog_id, user=user, db=db)
+    # Upload first so a failed upload changes nothing; URLs and None pass straight through.
+    profile_picture = resolve_picture(payload.profile_picture, f"pawsitivity/dogs/{dog.dog_id}")
     for field in ("dog_name", "dog_breed", "dog_age", "dog_gender", "profile_picture"):
-        value = getattr(payload, field)
+        value = profile_picture if field == "profile_picture" else getattr(payload, field)
         if value is not None:
             setattr(dog, field, value)
     dog.updated_by = user.user_id

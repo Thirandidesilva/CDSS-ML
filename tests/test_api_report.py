@@ -21,6 +21,7 @@ def test_generate_and_list_report(owner_with_dog):
     assert report["content"]["assessment_id"] == assessment_id
     assert "theta_irt" in report["content"] or "theta_calibrated" in report["content"]
     assert "flag_irt" in report["content"] and "flag_rf" in report["content"]
+    assert report["report_format"] == "pdf"
 
     listed = client.get("/api/v1/report", headers=headers)
     assert listed.status_code == 200
@@ -38,7 +39,7 @@ def test_generate_report_for_nonexistent_assessment_returns_404(registered_owner
     assert resp.json()["code"] == "3001"
 
 
-def test_download_report_streams_file(owner_with_dog):
+def test_download_report_streams_pdf(owner_with_dog):
     client, headers, dog_id = owner_with_dog
     assessment_id = _submit(client, headers, dog_id)
     generated = client.post(
@@ -48,8 +49,30 @@ def test_download_report_streams_file(owner_with_dog):
 
     resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
     assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
     assert "attachment" in resp.headers["content-disposition"]
-    assert resp.json()["report_id"] == report_id
+    assert f"report_{report_id}.pdf" in resp.headers["content-disposition"]
+    assert resp.content[:5] == b"%PDF-"
+
+
+def test_download_report_with_missing_file_returns_404(owner_with_dog):
+    import os
+
+    client, headers, dog_id = owner_with_dog
+    assessment_id = _submit(client, headers, dog_id)
+    generated = client.post(
+        "/api/v1/report/generate", json={"assessment_id": assessment_id}, headers=headers
+    )
+    report_id = generated.json()["response"][0]["report_id"]
+
+    # Simulate the PDF file having gone missing from disk after generation.
+    from api.services.report_storage import report_pdf_path
+
+    os.remove(report_pdf_path(report_id))
+
+    resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "4003"
 
 
 def test_download_someone_elses_report_returns_403(api_client, owner_with_dog):

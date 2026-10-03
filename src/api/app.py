@@ -1,7 +1,10 @@
 """create_app() factory: mounts routers, loads the scoring model once, wires the DB engine."""
 from __future__ import annotations
 
+from typing import Optional
+
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,12 +18,25 @@ from . import db  # noqa: E402
 from .config import get_settings  # noqa: E402
 from .errors import register_exception_handlers  # noqa: E402
 from .routers import assessment, auth, dogs, report, users  # noqa: E402
+from .services.report_pdf import PdfRenderer  # noqa: E402
 
 
-def create_app() -> FastAPI:
+def create_app(*, pdf_renderer: Optional[PdfRenderer] = None) -> FastAPI:
     # Called exactly once per process (uvicorn on startup, or once per test via the
     # api_client fixture) — everything below runs a single time, not per request.
-    app = FastAPI(title="Canine Anxiety CDSS", description=__doc__)
+    owns_renderer = pdf_renderer is None
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # PdfRenderer's own constructor launches Chromium on its own dedicated thread
+        # (see services/report_pdf.py) — nothing here touches Playwright directly, so
+        # there's no event-loop-thread restriction to work around.
+        app.state.pdf_renderer = pdf_renderer if pdf_renderer is not None else PdfRenderer()
+        yield
+        if owns_renderer:
+            app.state.pdf_renderer.close()
+
+    app = FastAPI(title="Canine Anxiety CDSS", description=__doc__, lifespan=lifespan)
 
     db.init_engine(get_settings().database_url)
     # Loaded once and reused for every request via app.state — see routers/assessment.py.

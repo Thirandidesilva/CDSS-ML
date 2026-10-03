@@ -28,6 +28,11 @@ class BusinessCode(str, Enum):
     REPORT_NOT_FOUND = "4002"
     REPORT_FILE_MISSING = "4003"  # DB row exists but its PDF file is unset/gone from disk
 
+    # 5xxx = image upload domain
+    UPLOAD_NOT_CONFIGURED = "5001"  # Cloudinary credentials are not set on this deployment
+    UPLOAD_FAILED = "5002"          # Cloudinary was unreachable or rejected the image
+    INVALID_IMAGE = "5003"          # not a base64 image data URI, wrong type, or too large
+
     # 9xxx = anything unhandled
     SERVER_ERROR = "9000"
 
@@ -43,5 +48,8 @@ HTTP_STATUS = {
     BusinessCode.ASSESSMENT_NOT_FOUND: 404,
     BusinessCode.REPORT_NOT_FOUND: 404,
     BusinessCode.REPORT_FILE_MISSING: 404,
+    BusinessCode.INVALID_IMAGE: 400,
+    BusinessCode.UPLOAD_FAILED: 502,
+    BusinessCode.UPLOAD_NOT_CONFIGURED: 503,
     BusinessCode.SERVER_ERROR: 500,
 }
