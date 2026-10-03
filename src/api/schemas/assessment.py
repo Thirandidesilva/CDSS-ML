@@ -7,6 +7,7 @@ from typing import Optional
 
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import run_pipeline  # noqa: E402
 
 from ..enums import Phenotype, SeverityBand  # noqa: E402
+from ..services.assessment_stats import anxiety_index  # noqa: E402
 
 
 class AssessmentSubmitRequest(BaseModel):
@@ -96,6 +98,10 @@ class AssessmentOut(BaseModel):
     theta_irt: Optional[float]
     theta_calibrated: Optional[float]  # exactly one of these two is non-null, see models.py
     theta_se: float
+    # 0-1 display scale of theta that always agrees with severity_band — see
+    # services/assessment_stats.anxiety_index. The band and theta remain the clinical result.
+    anxiety_index: float
+    created_at: datetime
     severity_band: SeverityBand
     phenotype: Phenotype
     rf_confidence: float
@@ -105,7 +111,7 @@ class AssessmentOut(BaseModel):
     recommendation: RecommendationOut
 
     @classmethod
-    def from_orm_row(cls, row) -> "AssessmentOut":
+    def from_orm_row(cls, row, cut_points: tuple) -> "AssessmentOut":
         # Can't just use from_attributes=True end to end here: recommendation_snapshot
         # is stored as a plain JSON dict on the Assessment row, not a nested ORM object,
         # so it needs to be unpacked into RecommendationOut by hand.
@@ -116,6 +122,16 @@ class AssessmentOut(BaseModel):
             theta_irt=row.theta_irt,
             theta_calibrated=row.theta_calibrated,
             theta_se=row.theta_se,
+            anxiety_index=anxiety_index(
+                row.theta_irt if row.theta_irt is not None else row.theta_calibrated, *cut_points
+            ),
+            # Always UTC-marked: Postgres returns an aware value, SQLite a naive one that is
+            # still UTC. A bare timestamp would be read as local time by the phone.
+            created_at=(
+                row.created_at
+                if row.created_at.tzinfo is not None
+                else row.created_at.replace(tzinfo=timezone.utc)
+            ),
             severity_band=row.severity_band,
             phenotype=row.phenotype,
             rf_confidence=row.rf_confidence,
