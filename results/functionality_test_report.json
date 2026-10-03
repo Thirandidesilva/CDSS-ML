@@ -1,0 +1,486 @@
+{
+  "summary": {
+    "Backend / API": {
+      "total": 49,
+      "passed": 49,
+      "failed": 0
+    },
+    "ML core pipeline": {
+      "total": 35,
+      "passed": 35,
+      "failed": 0
+    },
+    "Report / PDF generation service": {
+      "total": 7,
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "total": 91,
+  "total_passed": 91,
+  "total_failed": 0,
+  "tests_by_category": {
+    "Backend / API": [
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_get_all_questions",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_normal_case_returns_full_audit",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_withheld_case_returns_200_not_an_error",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_missing_item_returns_422_naming_field",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_out_of_range_value_returns_422_naming_field",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_wrong_type_returns_422_naming_field",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_submit_for_someone_elses_dog_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_session_number_increments",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_list_dog_assessment_and_get_result",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_get_nonexistent_assessment_returns_404",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_delete_assessment_then_disappears_from_list",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_get_all_assessment_requires_admin",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_get_all_assessments_groups_by_dog_id",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_stats_on_dog_with_no_assessments",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_stats_on_dog_with_assessments",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_stats_on_someone_elses_dog_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_with_no_activity",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_after_submitting_today",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_for_someone_else_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_openapi_docs_render",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_register_then_login",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_duplicate_email_returns_business_code",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_login_wrong_password_returns_business_code",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_missing_token_returns_401",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_forget_password_then_reset",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_forget_username",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_forget_username_unknown_email_returns_business_code",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_otp_expired_is_rejected",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_otp_too_many_attempts_locks_out_even_correct_code",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_requesting_new_otp_invalidates_previous_one",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_create_and_list_dog",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_get_dog_profile",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_get_nonexistent_dog_returns_404",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_get_someone_elses_dog_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_update_dog",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_delete_dog_then_disappears_from_list",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_get_all_dogs_requires_admin",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_list_dogs_with_explicit_own_user_id",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_dogs.py",
+        "test": "test_list_someone_elses_dogs_by_user_id_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_generate_and_list_report",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_generate_report_for_nonexistent_assessment_returns_404",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_report_streams_pdf",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_report_with_missing_file_returns_404",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_someone_elses_report_returns_403",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_get_all_reports_requires_admin",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_users.py",
+        "test": "test_get_profile",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_users.py",
+        "test": "test_update_profile",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_users.py",
+        "test": "test_delete_profile_then_token_still_decodes_but_account_inactive",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_users.py",
+        "test": "test_get_all_users_requires_admin",
+        "outcome": "PASSED"
+      }
+    ],
+    "ML core pipeline": [
+      {
+        "file": "test_cluster.py",
+        "test": "test_phenotype_labels_follow_profile_not_index",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_cluster.py",
+        "test": "test_check_stability_ari",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_fit_params.py",
+        "test": "test_fit_grm_params_discrimination_positive",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_fit_params.py",
+        "test": "test_fit_grm_params_thresholds_monotone",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_fit_params.py",
+        "test": "test_check_stability_is_tight",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_grm_reproduces_archive",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_irt_matches_archived_reference_implementation",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_calibrated_item_count",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_load_params_raises_on_non_monotone_thresholds",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_load_params_raises_on_non_positive_discrimination",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_irt.py",
+        "test": "test_category_probs_sums_to_one",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_longitudinal.py",
+        "test": "test_track_sentinel_items_reports_no_change",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_longitudinal.py",
+        "test": "test_track_sentinel_items_reports_a_real_change",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_longitudinal.py",
+        "test": "test_track_theta_change_no_change_is_not_detectable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_longitudinal.py",
+        "test": "test_track_theta_change_single_band_move_is_not_detectable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_longitudinal.py",
+        "test": "test_track_theta_change_large_move_is_detectable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_pipeline.py",
+        "test": "test_no_leakage_features",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_pipeline.py",
+        "test": "test_leakage_is_demonstrable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_pipeline.py",
+        "test": "test_rf_model_feature_list_has_no_forbidden_feature",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_all_nine_cells_have_evidence",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_flag_irt_withholds_regardless_of_phenotype_confidence",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_flag_rf_downgrades_not_withholds",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_both_flags_withholds_via_irt",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_no_flags_includes_phenotype_content",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_invalid_band_raises",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_invalid_phenotype_raises",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_to_dict_is_json_serialisable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_screening_caveat_always_present",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_aversive_technique_caveat_present_unless_withheld",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_single_band_change_is_not_detectable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_rules.py",
+        "test": "test_larger_change_is_detectable",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_run_pipeline.py",
+        "test": "test_score_case_on_three_real_dogs",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_run_pipeline.py",
+        "test": "test_demo_runs_without_raising",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_run_pipeline.py",
+        "test": "test_score_all_runs_and_writes_output",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_score_cohort.py",
+        "test": "test_score_cohort_shape_and_validity",
+        "outcome": "PASSED"
+      }
+    ],
+    "Report / PDF generation service": [
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_chart_single_point_has_no_polyline",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_chart_multi_point_has_one_polyline_and_bands",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_chart_handles_negative_theta_without_clamping_to_zero",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_detect_sources_neither",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_detect_sources_msd_only",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_detect_sources_aaha_only",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_detect_sources_both_in_fixed_order",
+        "outcome": "PASSED"
+      }
+    ]
+  },
+  "pytest_exit_code": 0
+}
