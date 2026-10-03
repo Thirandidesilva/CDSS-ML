@@ -11,8 +11,9 @@ from ..db import get_db
 from ..enums import AccountStatus, UserRole
 from ..errors import ApiError, envelope
 from ..models import User
-from ..openapi_responses import ADMIN_ONLY, SERVER_ERROR, UNAUTHORIZED, success, success_variants
+from ..openapi_responses import ADMIN_ONLY, SERVER_ERROR, UNAUTHORIZED, UPLOAD_ERRORS, success, success_variants
 from ..schemas.user import UserUpdateRequest
+from ..services.cloudinary import resolve_picture
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -58,6 +59,7 @@ def get_profile(user: User = Depends(get_current_user)):
          envelope(BusinessCode.INVALID_CREDENTIALS, [{"message": "current password is incorrect"}])),
     ),
     **UNAUTHORIZED,
+    **UPLOAD_ERRORS,
     **SERVER_ERROR,
 })
 def update_profile(
@@ -65,6 +67,10 @@ def update_profile(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    # A base64 photo is uploaded to Cloudinary first, so a failed upload aborts the whole
+    # update before anything is changed; an ordinary URL (or None) passes straight through.
+    profile_picture = resolve_picture(payload.profile_picture, f"pawsitivity/users/{user.user_id}")
+
     # Changing email needs a uniqueness check against every OTHER user (hence
     # User.user_id != user.user_id) — a user "changing" their email to their own
     # current email shouldn't trip the duplicate check.
@@ -75,7 +81,7 @@ def update_profile(
 
     # Only overwrite fields the caller actually sent (None means "leave unchanged").
     for field in ("first_name", "last_name", "phone_number", "profile_picture"):
-        value = getattr(payload, field)
+        value = profile_picture if field == "profile_picture" else getattr(payload, field)
         if value is not None:
             setattr(user, field, value)
 

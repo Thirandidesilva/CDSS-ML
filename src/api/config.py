@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,6 +31,15 @@ class Settings(BaseSettings):
 
     otp_expire_minutes: int = 10
     otp_max_attempts: int = 5
+
+    # Cloudinary hosts profile photos. A base64 photo sent in `profile_picture` on
+    # users/update and dogs/create|update is uploaded from the server (services/cloudinary.py),
+    # so the API secret never leaves it. Optional (unlike the settings above) so a deployment
+    # that hasn't set them yet still boots — only a request that actually carries a photo
+    # fails, with business code 5001.
+    cloudinary_cloud_name: Optional[str] = None
+    cloudinary_api_key: Optional[str] = None
+    cloudinary_api_secret: Optional[str] = None
 
 
 @lru_cache

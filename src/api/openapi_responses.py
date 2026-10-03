@@ -73,6 +73,23 @@ REPORT_FILE_MISSING = {404: {
     "content": {"application/json": {"example": _body("4003", "report file missing on disk")}},
 }}
 
+# Only relevant to routes that accept a profile_picture: when it is a base64 image data
+# URI, the API uploads it to Cloudinary, which can fail in these three ways.
+UPLOAD_ERRORS = {
+    400: {
+        "description": "profile_picture is not a valid base64 image data URI (jpeg/png/webp/heic, max 5 MB)",
+        "content": {"application/json": {"example": _body("5003", "image must be a base64 jpeg/png/webp/heic data URI")}},
+    },
+    502: {
+        "description": "Cloudinary was unreachable or rejected the image",
+        "content": {"application/json": {"example": _body("5002", "image upload failed")}},
+    },
+    503: {
+        "description": "Cloudinary credentials are not configured on this deployment",
+        "content": {"application/json": {"example": _body("5001", "image uploads are not configured")}},
+    },
+}
+
 SERVER_ERROR = {500: {
     "description": "Unhandled server error",
     "content": {"application/json": {"example": _body("9000", "internal server error")}},
