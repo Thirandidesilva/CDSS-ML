@@ -95,6 +95,11 @@ UPLOAD_ERRORS = {
     },
 }
 
+EMAIL_SEND_FAILED = {502: {
+    "description": "The email provider refused or couldn't deliver the message",
+    "content": {"application/json": {"example": _body("1007", "we couldn't send the email right now")}},
+}}
+
 SERVER_ERROR = {500: {
     "description": "Unhandled server error",
     "content": {"application/json": {"example": _body("9000", "internal server error")}},

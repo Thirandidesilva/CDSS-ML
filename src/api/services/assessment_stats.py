@@ -15,6 +15,45 @@ def _theta_of(assessment) -> float:
     return assessment.theta_irt if assessment.theta_irt is not None else assessment.theta_calibrated
 
 
+def band_cut_points(norms) -> tuple:
+    """(cut_75, cut_90, cut_99) from the scoring model's population-norms table — the same
+    75th/90th percentile theta cut-points that decide the Low/Moderate/High band. cut_99 is
+    None when the table has no 99th percentile.
+    """
+    cut = norms.set_index("percentile").theta_cutpoint
+    cut_99 = float(cut.loc[99]) if 99 in cut.index else None
+    return float(cut.loc[75]), float(cut.loc[90]), cut_99
+
+
+def anxiety_index(theta: float, cut_75: float, cut_90: float, cut_99=None) -> float:
+    """theta on a 0-1 scale that always agrees with the severity band.
+
+    The band itself comes from theta against the population 75th/90th percentile cut-points
+    (calibrate.assign_band), so the index is a piecewise-linear map that pins those cut-points
+    to fixed positions: Low always lands in [0, 1/3), Moderate in [1/3, 2/3), High in
+    [2/3, 1]. Inside a band it rises smoothly with theta, so a rising score is visible before
+    it crosses into the next band. Not a percentile and not a sum of item scores: the band
+    and theta stay the clinical result, this is a display scale.
+
+    Anchors: (cut_75 - 2u -> 0), (cut_75 -> 1/3), (cut_90 -> 2/3), (cut_99 -> 1) with
+    u = cut_90 - cut_75; when there is no usable 99th percentile the top anchor is cut_90 + 2u.
+    Values beyond the outer anchors clamp to 0 and 1.
+    """
+    unit = cut_90 - cut_75
+    bottom = cut_75 - 2 * unit
+    top = cut_99 if cut_99 is not None and cut_99 > cut_90 else cut_90 + 2 * unit
+    anchors = [(bottom, 0.0), (cut_75, 1 / 3), (cut_90, 2 / 3), (top, 1.0)]
+
+    if theta <= anchors[0][0]:
+        return 0.0
+    if theta >= anchors[-1][0]:
+        return 1.0
+    for (x0, y0), (x1, y1) in zip(anchors, anchors[1:]):
+        if theta < x1:
+            return round(y0 + (theta - x0) / (x1 - x0) * (y1 - y0), 3)
+    return 1.0
+
+
 def _avg_median(values: list) -> dict:
     return {"average": round(statistics.mean(values), 2), "median": round(statistics.median(values), 2)}
 

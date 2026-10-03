@@ -41,7 +41,7 @@ from ..schemas.assessment import (  # noqa: E402
     DogIdRequest,
     WeeklySummaryRequest,
 )
-from ..services.assessment_stats import build_weekly_summary, compute_dog_stats  # noqa: E402
+from ..services.assessment_stats import band_cut_points, build_weekly_summary, compute_dog_stats  # noqa: E402
 from ..services.scoring import run_assessment  # noqa: E402
 
 router = APIRouter(prefix="/api/v1/assessment", tags=["assessment"])
@@ -51,6 +51,7 @@ _ASSESSMENT_EXAMPLE = {
     "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
     "session_number": 1,
     "theta_irt": None, "theta_calibrated": -0.376, "theta_se": 0.309,
+    "anxiety_index": 0.136, "created_at": "2026-09-19T12:00:00",
     "severity_band": "Low", "phenotype": "Noise-specific", "rf_confidence": 0.79,
     "flag_irt": False, "flag_rf": False,
     "subscales": {"separation": 1.75, "noise": 2.0, "fear": 0.5,
@@ -111,6 +112,12 @@ _WEEKLY_SUMMARY_EXAMPLE = {
 }
 
 
+def _assessment_json(row, request: Request) -> dict:
+    # The index is built from the loaded scoring model's norms, the same ones the band uses.
+    cut_points = band_cut_points(request.app.state.scoring_model[4])
+    return AssessmentOut.from_orm_row(row, cut_points).model_dump(mode="json")
+
+
 @router.get("/questions", responses={
     **success(envelope(BusinessCode.SUCCESS, [{"item_code": "Q4", "text": "..."}])),
     **UNAUTHORIZED,
@@ -146,7 +153,7 @@ def submit_assessment(
     # Loaded once at app startup (app.py) and stashed here — never re-loaded per request.
     scoring_model = request.app.state.scoring_model
     assessment = run_assessment(db, dog, payload, user, scoring_model)
-    return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(assessment).model_dump(mode="json")])
+    return envelope(BusinessCode.SUCCESS, [_assessment_json(assessment, request)])
 
 
 @router.get("/all", responses={
@@ -155,7 +162,11 @@ def submit_assessment(
     **ADMIN_ONLY,
     **SERVER_ERROR,
 })
-def get_all_assessments(_admin: User = Depends(require_role(UserRole.ADMIN)), db: Session = Depends(get_db)):
+def get_all_assessments(
+    request: Request,
+    _admin: User = Depends(require_role(UserRole.ADMIN)),
+    db: Session = Depends(get_db),
+):
     # Ordered by dog_id first so rows for the same dog land together — grouping below
     # then just has to append in the order they arrive, no separate sort needed.
     rows = db.scalars(
@@ -166,7 +177,7 @@ def get_all_assessments(_admin: User = Depends(require_role(UserRole.ADMIN)), db
 
     grouped: dict = {}
     for r in rows:
-        item = AssessmentOut.from_orm_row(r).model_dump(mode="json")
+        item = _assessment_json(r, request)
         dog_id = item.pop("dog_id")  # hoisted out to the group level, not repeated per item
         grouped.setdefault(dog_id, []).append(item)
 
@@ -183,6 +194,7 @@ def get_all_assessments(_admin: User = Depends(require_role(UserRole.ADMIN)), db
 })
 def list_dog_assessments(
     payload: DogIdRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -193,7 +205,7 @@ def list_dog_assessments(
         .where(Assessment.dog_id == dog.dog_id, Assessment.status != AssessmentStatus.DELETED)
         .order_by(Assessment.created_at)
     ).all()
-    return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(r).model_dump(mode="json") for r in rows])
+    return envelope(BusinessCode.SUCCESS, [_assessment_json(r, request) for r in rows])
 
 
 @router.post("/get", responses={
@@ -205,11 +217,12 @@ def list_dog_assessments(
 })
 def get_assessment_result(
     payload: AssessmentIdRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     assessment = get_owned_assessment(payload.assessment_id, user=user, db=db)
-    return envelope(BusinessCode.SUCCESS, [AssessmentOut.from_orm_row(assessment).model_dump(mode="json")])
+    return envelope(BusinessCode.SUCCESS, [_assessment_json(assessment, request)])
 
 
 @router.post("/delete", responses={

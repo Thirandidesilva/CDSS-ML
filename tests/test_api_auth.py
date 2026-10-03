@@ -196,3 +196,66 @@ def test_requesting_new_otp_invalidates_previous_one(api_client, sent_emails):
     )
     assert fresh.status_code == 200
     assert fresh.json()["code"] == "0000"
+
+
+# ---------------------------------------------------------------- email provider failures
+
+def _resend_refuses(monkeypatch):
+    """Makes the real send_email run, but Resend itself refuse — exactly what a sandbox
+    account does for any recipient other than its owner."""
+    import resend
+    from resend.exceptions import ResendError
+
+    def _refuse(params):
+        raise ResendError(
+            code=403, error_type="validation_error",
+            message="You can only send testing emails to your own email address (owner@example.com).",
+            suggested_action="verify a domain",
+        )
+
+    monkeypatch.setattr(resend.Emails, "send", _refuse)
+
+
+def test_forget_username_when_resend_refuses_is_a_clean_502_not_a_500(registered_owner, monkeypatch):
+    client, _ = registered_owner
+    _resend_refuses(monkeypatch)
+
+    resp = client.post("/api/v1/auth/forget-username", json={"email": "owner1@example.com"})
+
+    assert resp.status_code == 502
+    assert resp.json()["code"] == "1007"
+    # The provider's own wording (it names the account owner's address) stays in the logs.
+    assert "owner@example.com" not in resp.text
+    assert "testing emails" not in resp.text
+
+
+def test_forget_password_when_resend_refuses_is_a_clean_502(registered_owner, monkeypatch):
+    client, _ = registered_owner
+    _resend_refuses(monkeypatch)
+
+    resp = client.post("/api/v1/auth/forget-password", json={"email": "owner1@example.com"})
+
+    assert resp.status_code == 502
+    assert resp.json()["code"] == "1007"
+
+
+def test_a_network_failure_reaching_resend_is_also_a_502(registered_owner, monkeypatch):
+    import requests
+    import resend
+
+    def _down(params):
+        raise requests.ConnectionError("dns failure")
+
+    monkeypatch.setattr(resend.Emails, "send", _down)
+    client, _ = registered_owner
+    resp = client.post("/api/v1/auth/forget-username", json={"email": "owner1@example.com"})
+    assert resp.status_code == 502
+    assert resp.json()["code"] == "1007"
+
+
+def test_unknown_email_is_still_reported_before_any_email_is_attempted(api_client, monkeypatch):
+    import resend
+
+    monkeypatch.setattr(resend.Emails, "send", lambda params: (_ for _ in ()).throw(AssertionError("must not send")))
+    resp = api_client.post("/api/v1/auth/forget-username", json={"email": "nobody@example.com"})
+    assert resp.json()["code"] == "1003"
