@@ -1,13 +1,14 @@
-"""Report endpoints: generate a clinical/audit report from an assessment, list them,
-and download one. download_report() is the one route in this whole API that does NOT
-return the {"code","response"} envelope — see the comment on it below for why.
+"""Report endpoints: generate a clinical/audit report from an assessment (rendering the
+real vet-facing PDF alongside the JSON audit snapshot), list them, and download the PDF.
+download_report() is the one route in this whole API that does NOT return the
+{"code","response"} envelope — see the comment on it below for why.
 """
 from __future__ import annotations
 
-import json
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ from ..openapi_responses import (
     ADMIN_ONLY,
     ASSESSMENT_NOT_FOUND,
     FORBIDDEN,
+    REPORT_FILE_MISSING,
     REPORT_NOT_FOUND,
     SERVER_ERROR,
     UNAUTHORIZED,
@@ -30,6 +32,8 @@ from ..openapi_responses import (
 )
 from ..schemas.report import ReportGenerateRequest
 from ..services.report import build_report_content
+from ..services.report_pdf_data import build_pdf_context
+from ..services.report_storage import save_report_pdf
 
 router = APIRouter(prefix="/api/v1/report", tags=["report"])
 
@@ -39,7 +43,7 @@ _REPORT_EXAMPLE = {
     "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
     "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
     "generated_at": "2026-09-19T12:00:00+00:00",
-    "report_format": "json", "status": "ready",
+    "report_format": "pdf", "status": "ready",
     "content": {"assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab", "theta_calibrated": -0.376,
                 "severity_band": "Low", "phenotype": "Noise-specific", "flag_irt": False, "flag_rf": False},
 }
@@ -55,6 +59,8 @@ def _report_out(report: Report) -> dict:
         "report_format": report.report_format,
         "status": report.status.value,
         "content": report.content,
+        # filepath is deliberately never exposed here — the only way to get the PDF
+        # itself is /download/{report_id}, not by reading a path out of this JSON.
     }
 
 
@@ -78,6 +84,7 @@ def _get_owned_report(report_id: uuid.UUID, user: User, db: Session) -> Report:
 })
 def generate_report(
     payload: ReportGenerateRequest,
+    request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -85,7 +92,7 @@ def generate_report(
     # comes from the request body, not the URL) confirms the caller may see this
     # assessment before any report content is built from it.
     assessment = get_owned_assessment(payload.assessment_id, user=user, db=db)
-    content = build_report_content(assessment)
+    content = build_report_content(assessment)  # unchanged JSON audit snapshot
     report = Report(
         assessment_id=assessment.assessment_id,
         dog_id=assessment.dog_id,
@@ -93,6 +100,15 @@ def generate_report(
         content=content,
     )
     db.add(report)
+    db.flush()  # assigns report.report_id/generated_at, needed by the PDF before commit
+
+    context = build_pdf_context(
+        assessment, report.report_id, report.generated_at, request.app.state.scoring_model, db
+    )
+    pdf_bytes = request.app.state.pdf_renderer.render_pdf(context)
+    report.filepath = save_report_pdf(report.report_id, pdf_bytes)
+    report.report_format = "pdf"
+
     db.commit()
     db.refresh(report)
     return envelope(BusinessCode.SUCCESS, [_report_out(report)])
@@ -122,12 +138,12 @@ def get_all_reports(_admin: User = Depends(require_role(UserRole.ADMIN)), db: Se
 
 @router.get("/download/{report_id}", responses={
     200: {
-        "description": "The report file, streamed directly (not wrapped in the {code,response} envelope)",
-        "content": {"application/json": {"example": _REPORT_EXAMPLE}},
+        "description": "The rendered vet-report PDF, streamed directly (not the {code,response} envelope)",
+        "content": {"application/pdf": {}},
     },
     **UNAUTHORIZED,
     **FORBIDDEN,
-    **REPORT_NOT_FOUND,
+    **REPORT_FILE_MISSING,
     **SERVER_ERROR,
 })
 def download_report(
@@ -139,11 +155,16 @@ def download_report(
     # this one also skips the {"code","response"} envelope): browsers and curl expect
     # a GET link to hand back a downloadable file body directly, not a JSON envelope
     # to unwrap first. The Content-Disposition header is what makes a browser treat
-    # this as a file save instead of just displaying the JSON.
+    # this as a file save instead of just displaying it inline.
     report = _get_owned_report(report_id, user, db)
-    body = json.dumps(_report_out(report), indent=2)
+    if not report.filepath or not Path(report.filepath).is_file():
+        # Covers both "never rendered" and "file went missing from disk since" — from
+        # the caller's point of view both just mean "there is no file to give you."
+        raise ApiError(BusinessCode.REPORT_FILE_MISSING, "report file missing on disk")
+
+    pdf_bytes = Path(report.filepath).read_bytes()
     return Response(
-        content=body,
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="report_{report.report_id}.json"'},
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="report_{report.report_id}.pdf"'},
     )
