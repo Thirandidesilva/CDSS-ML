@@ -44,7 +44,7 @@ src/
   api/                         the FastAPI service (see below)
     models.py                  SQLAlchemy schema (users, dogs, assessments, reports, OTP codes, ...)
     routers/                   auth, users, dogs, assessment, report
-    services/                  scoring bridge, OTP, email (Resend), PDF report rendering
+    services/                  scoring bridge, OTP, email (Resend), PDF report rendering (ReportLab)
     templates/report.html      the vet-facing PDF template (Jinja2 + inline SVG chart)
 alembic/                       hand-written DB migrations (no live DB to autogenerate against)
 tests/                         pytest suite — pipeline tests + full API test suite
@@ -56,14 +56,14 @@ docs/                          source PDFs (MSD, AAHA), openapi.json, THESIS_GUI
 
 ## Setup
 
-Requires Python 3.9 (the venv here is pinned to it — code uses `typing.Optional` rather
-than `X | None` syntax throughout for that reason).
+Runs on Python 3.9 to 3.12 (code uses `typing.Optional` rather than `X | None` syntax
+throughout so 3.9 keeps working). The Vercel deployment uses 3.12 (`.python-version`); the
+full test suite passes on both 3.9 and 3.12.
 
 ```bash
 git clone <this repo> && cd CDSS-ML
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium   # one-time; not pip-installable — needed for PDF reports
+pip install -r requirements-dev.txt   # requirements.txt is the runtime-only subset (what gets deployed)
 ```
 
 ## Running the ML pipeline
@@ -110,8 +110,8 @@ Creates all tables (`users`, `dogs`, `assessment`, `irt_response`, `recommendati
 uvicorn api:create_app --factory --app-dir src --reload
 ```
 
-`--factory` matters: `create_app()` is a factory function (it also launches a headless
-Chromium instance for PDF rendering), not a bare `app` object.
+`--factory` matters: `create_app()` is a factory function, not a bare `app` object.
+(`index.py` at the repo root builds it once and exposes `app`, which is what Vercel looks for.)
 
 Open **http://127.0.0.1:8000/docs** for the interactive Swagger UI (or read
 `docs/openapi.json` directly — regenerate it with the same `app.openapi()` call the
@@ -134,9 +134,10 @@ duplicate email, etc.) that are still a well-formed 200.
   "list everyone" routes.
 - **Assessment** — `GET questions` (the 12 items), `POST submit` (runs the scoring
   pipeline via `score_case()` and persists the full audit trail), history listing.
-- **Report** — `POST generate` builds both a JSON audit snapshot and a rendered
-  two-page clinical PDF (Playwright + Jinja2 + an inline-SVG severity trend chart);
-  `GET download/{id}` streams the actual PDF.
+- **Report** — `POST generate` stores a JSON audit snapshot; `GET download/{id}` draws the
+  two-page clinical PDF on demand with ReportLab (pure Python, severity trend chart
+  included) from the stored rows. Nothing is written to disk, so it works on a serverless
+  host.
 
 ## Testing
 
@@ -146,8 +147,15 @@ python -m pytest tests/ -v
 
 No live database or real email/PDF delivery is required — the suite uses an in-memory
 SQLite database per test, monkeypatches the email sender to capture outgoing messages
-instead of calling Resend, and launches one headless-Chromium instance for the whole
-test session (not per test) for the PDF-rendering tests.
+instead of calling Resend. PDF tests render real PDFs in memory with ReportLab.
+
+## Deploying to Vercel
+
+`index.py`, `vercel.json`, `.vercelignore` and `.python-version` are the whole setup; Vercel
+installs `requirements.txt`. Set the same variables as `.env.example` in the Vercel project,
+with `DATABASE_URL` pointing at Supabase's transaction pooler (port 6543) and
+`DB_POOL_MODE=null`. Run Alembic migrations from your own machine against the direct
+(port 5432) URL — they are not part of the deployed bundle.
 
 ## Conventions worth knowing before changing `src/`
 
