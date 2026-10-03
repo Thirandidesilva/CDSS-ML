@@ -1,3 +1,5 @@
+import pytest
+
 # Under the isolated_pipeline_env fixture (params_own.csv + cohort-relative norms
 # derived on the fly, not the calibrated production defaults), theta_se for these two
 # payloads lands on opposite sides of SE_THRESHOLD=0.50 the other way round from how
@@ -268,3 +270,101 @@ def test_weekly_summary_for_someone_else_returns_403(api_client, owner_with_dog)
     )
     assert resp.status_code == 403
     assert resp.json()["code"] == "2002"
+
+
+# ---------------------------------------------------------------- anxiety_index / created_at
+
+def _band_for_index(index):
+    # The documented contract: Low < 1/3 <= Moderate < 2/3 <= High.
+    return "Low" if index < 1 / 3 else ("Moderate" if index < 2 / 3 else "High")
+
+
+def test_anxiety_index_pins_the_band_cut_points():
+    from api.services.assessment_stats import anxiety_index
+
+    cut_75, cut_90, cut_99 = 0.5855, 1.101, 2.0202
+    assert anxiety_index(cut_75, cut_75, cut_90, cut_99) == pytest.approx(1 / 3, abs=1e-3)
+    assert anxiety_index(cut_90, cut_75, cut_90, cut_99) == pytest.approx(2 / 3, abs=1e-3)
+    assert anxiety_index(cut_99, cut_75, cut_90, cut_99) == 1.0
+
+
+def test_anxiety_index_is_clamped_to_zero_and_one():
+    from api.services.assessment_stats import anxiety_index
+
+    assert anxiety_index(-50.0, 0.5855, 1.101, 2.0202) == 0.0
+    assert anxiety_index(50.0, 0.5855, 1.101, 2.0202) == 1.0
+
+
+def test_anxiety_index_never_decreases_as_theta_rises():
+    from api.services.assessment_stats import anxiety_index
+
+    thetas = [x / 20 for x in range(-80, 120)]
+    values = [anxiety_index(t, 0.5855, 1.101, 2.0202) for t in thetas]
+    assert values == sorted(values)
+
+
+def test_anxiety_index_always_agrees_with_the_severity_band():
+    # The whole point: the number can never contradict the Low/Moderate/High label.
+    from api.services.assessment_stats import anxiety_index
+    from calibrate import assign_band
+
+    for cut_99 in (2.0202, None):
+        for i in range(-300, 400):
+            theta = i / 100
+            band = assign_band(theta, 0.5855, 1.101)
+            assert _band_for_index(anxiety_index(theta, 0.5855, 1.101, cut_99)) == band, (theta, cut_99)
+
+
+def test_anxiety_index_without_a_99th_percentile_still_reaches_one():
+    from api.services.assessment_stats import anxiety_index
+
+    assert anxiety_index(0.0, 0.5855, 1.101) < 1 / 3
+    assert anxiety_index(5.0, 0.5855, 1.101) == 1.0
+
+
+def test_band_cut_points_read_the_norms_table():
+    import pandas as pd
+
+    from api.services.assessment_stats import band_cut_points
+
+    full = pd.DataFrame({"percentile": [50, 75, 90, 99], "theta_cutpoint": [0.0, 0.5, 1.0, 2.0]})
+    assert band_cut_points(full) == (0.5, 1.0, 2.0)
+    no_99 = pd.DataFrame({"percentile": [50, 75, 90], "theta_cutpoint": [0.0, 0.5, 1.0]})
+    assert band_cut_points(no_99) == (0.5, 1.0, None)
+
+
+def test_submit_returns_an_index_that_matches_the_band_and_a_timestamp(owner_with_dog):
+    from datetime import datetime
+
+    client, headers, dog_id = owner_with_dog
+    resp = client.post(
+        "/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers
+    )
+    result = resp.json()["response"][0]
+
+    assert 0.0 <= result["anxiety_index"] <= 1.0
+    assert _band_for_index(result["anxiety_index"]) == result["severity_band"]
+    # An ISO timestamp the app can parse for "completed on", explicitly UTC so a phone in
+    # another timezone shows the right local time.
+    assert result["created_at"].endswith("Z")
+    # (Python 3.9's fromisoformat predates the "Z" suffix; Dart's DateTime.parse accepts it.)
+    created = datetime.fromisoformat(result["created_at"].replace("Z", "+00:00"))
+    assert created.utcoffset().total_seconds() == 0
+
+
+def test_list_and_get_return_the_same_index_and_timestamp_as_submit(owner_with_dog):
+    client, headers, dog_id = owner_with_dog
+    submitted = client.post(
+        "/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers
+    ).json()["response"][0]
+
+    listed = client.post(
+        "/api/v1/assessment/list-by-dog", json={"dog_id": dog_id}, headers=headers
+    ).json()["response"][0]
+    fetched = client.post(
+        "/api/v1/assessment/get", json={"assessment_id": submitted["assessment_id"]}, headers=headers
+    ).json()["response"][0]
+
+    for other in (listed, fetched):
+        assert other["anxiety_index"] == submitted["anxiety_index"]
+        assert other["created_at"] == submitted["created_at"]
