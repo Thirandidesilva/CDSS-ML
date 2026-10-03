@@ -68,11 +68,6 @@ REPORT_NOT_FOUND = {404: {
     "content": {"application/json": {"example": _body("4002", "report not found")}},
 }}
 
-REPORT_FILE_MISSING = {404: {
-    "description": "Report exists but its PDF file is unset or missing on disk",
-    "content": {"application/json": {"example": _body("4003", "report file missing on disk")}},
-}}
-
 REPORT_UNAVAILABLE = {503: {
     "description": "The PDF could not be rendered",
     "content": {"application/json": {"example": _body("4004", "the report could not be rendered")}},

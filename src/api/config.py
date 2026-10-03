@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
     reset_token_expire_minutes: int = 15
-    reports_dir: str = "reports/generated"  # gitignored — rendered vet-report PDFs live here
 
     # Resend's HTTP API (not SMTP — avoids the port/implicit-TLS mismatches SMTP hit).
     # Required (no default): fail loudly at startup if unconfigured, same as

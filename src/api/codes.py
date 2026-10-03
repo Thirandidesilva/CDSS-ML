@@ -27,7 +27,7 @@ class BusinessCode(str, Enum):
     # 4xxx = report domain
     REPORT_NOT_READY = "4001"
     REPORT_NOT_FOUND = "4002"
-    REPORT_FILE_MISSING = "4003"  # DB row exists but its PDF file is unset/gone from disk
+    REPORT_FILE_MISSING = "4003"  # retired: PDFs are rendered on demand, so there is no file to go missing
     REPORT_UNAVAILABLE = "4004"   # the PDF could not be rendered
 
     # 5xxx = image upload domain

@@ -55,8 +55,29 @@ def test_download_report_streams_pdf(owner_with_dog):
     assert resp.content[:5] == b"%PDF-"
 
 
-def test_download_report_with_missing_file_returns_404(owner_with_dog):
-    import os
+def test_generating_and_downloading_write_nothing_to_disk(owner_with_dog):
+    from pathlib import Path
+
+    client, headers, dog_id = owner_with_dog
+    root = Path(__file__).resolve().parents[1]
+
+    def _snapshot():
+        return sorted(str(p) for p in root.rglob("*.pdf") if ".venv" not in p.parts)
+
+    before = _snapshot()
+    assessment_id = _submit(client, headers, dog_id)
+    generated = client.post(
+        "/api/v1/report/generate", json={"assessment_id": assessment_id}, headers=headers
+    )
+    report_id = generated.json()["response"][0]["report_id"]
+    resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
+
+    assert resp.status_code == 200
+    assert _snapshot() == before
+
+
+def test_download_can_be_repeated_and_is_a_real_two_page_pdf(owner_with_dog):
+    import re
 
     client, headers, dog_id = owner_with_dog
     assessment_id = _submit(client, headers, dog_id)
@@ -65,14 +86,19 @@ def test_download_report_with_missing_file_returns_404(owner_with_dog):
     )
     report_id = generated.json()["response"][0]["report_id"]
 
-    # Simulate the PDF file having gone missing from disk after generation.
-    from api.services.report_storage import report_pdf_path
+    for _ in range(2):
+        resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
+        assert resp.status_code == 200
+        assert len(re.findall(rb"/Type /Page\b", resp.content)) == 2
 
-    os.remove(report_pdf_path(report_id))
 
-    resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
+def test_download_unknown_report_returns_404(registered_owner):
+    client, headers = registered_owner
+    resp = client.get(
+        "/api/v1/report/download/00000000-0000-0000-0000-000000000000", headers=headers
+    )
     assert resp.status_code == 404
-    assert resp.json()["code"] == "4003"
+    assert resp.json()["code"] == "4002"
 
 
 def test_download_someone_elses_report_returns_403(api_client, owner_with_dog):
@@ -117,17 +143,19 @@ def _failing_renderer():
     return _Failing()
 
 
-def test_generate_when_the_renderer_fails_is_503_and_saves_no_report(owner_with_dog, monkeypatch):
+def test_download_when_the_renderer_fails_is_503(owner_with_dog, monkeypatch):
     client, headers, dog_id = owner_with_dog
-    monkeypatch.setattr(client.app.state, "pdf_renderer", _failing_renderer())
     assessment_id = _submit(client, headers, dog_id)
-
-    resp = client.post(
+    generated = client.post(
         "/api/v1/report/generate", json={"assessment_id": assessment_id}, headers=headers
     )
+    report_id = generated.json()["response"][0]["report_id"]
+    monkeypatch.setattr(client.app.state, "pdf_renderer", _failing_renderer())
+
+    resp = client.get(f"/api/v1/report/download/{report_id}", headers=headers)
 
     assert resp.status_code == 503
     assert resp.json()["code"] == "4004"
-    assert client.get("/api/v1/report", headers=headers).json()["response"] == []
-    # The rest of the API is unaffected.
+    # The rest of the API is unaffected, and generating a report never needed the renderer.
     assert client.get("/api/v1/users/me", headers=headers).status_code == 200
+    assert client.get("/api/v1/report", headers=headers).json()["response"][0]["report_id"] == report_id
