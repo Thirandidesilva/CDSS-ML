@@ -74,8 +74,8 @@ REPORT_FILE_MISSING = {404: {
 }}
 
 REPORT_UNAVAILABLE = {503: {
-    "description": "This server cannot start Chromium, so it cannot render the PDF",
-    "content": {"application/json": {"example": _body("4004", "pdf reports are not available on this server")}},
+    "description": "The PDF could not be rendered",
+    "content": {"application/json": {"example": _body("4004", "the report could not be rendered")}},
 }}
 
 # Only relevant to routes that accept a profile_picture: when it is a base64 image data

@@ -1,6 +1,6 @@
 """Assembles the flat dict of template variables the vet-report PDF needs, from the
 Assessment/Dog/User/IRTResponse rows plus the scoring model's population norms.
-No Jinja2, no Playwright, no HTTP concerns — just data.
+No PDF library, no HTTP concerns — just data.
 """
 from __future__ import annotations
 
@@ -23,7 +23,6 @@ import longitudinal    # noqa: E402 - track_theta_change(), the blessed trend-de
 
 from ..enums import AssessmentStatus  # noqa: E402
 from ..models import Assessment  # noqa: E402
-from .report_chart import render_severity_chart_svg  # noqa: E402
 from .report_sources import detect_sources  # noqa: E402
 
 _SUBSCALE_LABELS = {
@@ -112,7 +111,6 @@ def build_pdf_context(
     previous = history[-2] if len(history) >= 2 else None
 
     chart_points = [(a.created_at.strftime("%d %b %Y"), _theta_of(a)) for a in history]
-    chart_svg = render_severity_chart_svg(chart_points, cut_75, cut_90)
 
     subscale_values = {name: assessment.subscales[name] for name in _SUBSCALE_ORDER}
     highest_subscale = max(subscale_values, key=lambda name: subscale_values[name])
@@ -173,6 +171,6 @@ def build_pdf_context(
         "recommendation_caveats": rec["caveats"],
         "recommendation_sources": detect_sources(rec["action"], rec["evidence"]),
         "alert_banner": _build_alert_banner(assessment, previous),
-        "chart_svg": chart_svg,
+        "chart": {"points": chart_points, "cut_75": cut_75, "cut_90": cut_90},
         "questionnaire_rows": questionnaire_rows,
     }

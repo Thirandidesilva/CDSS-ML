@@ -28,7 +28,7 @@ class BusinessCode(str, Enum):
     REPORT_NOT_READY = "4001"
     REPORT_NOT_FOUND = "4002"
     REPORT_FILE_MISSING = "4003"  # DB row exists but its PDF file is unset/gone from disk
-    REPORT_UNAVAILABLE = "4004"   # this server can't start Chromium, so it can't render PDFs
+    REPORT_UNAVAILABLE = "4004"   # the PDF could not be rendered
 
     # 5xxx = image upload domain
     UPLOAD_NOT_CONFIGURED = "5001"  # Cloudinary credentials are not set on this deployment
