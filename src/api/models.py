@@ -1,6 +1,7 @@
-"""ORM schema: users, dogs, assessment, irt_response, recommendation, report, otp_codes.
+"""ORM schema: users, dogs, assessment, irt_response, recommendation, report, otp_codes,
+refresh_tokens.
 
-Seven tables, one file — small enough to read end to end, matching this project's
+Eight tables, one file — small enough to read end to end, matching this project's
 "can the author explain this under examination" standard. Never imported by
 run_pipeline.py/rules.py/etc.: this is a layer that calls into the ML core, not the
 other way round.
@@ -245,4 +246,24 @@ class OtpCode(Base):
     # Set on successful verification, or when superseded by a newer code for the same
     # user+purpose (requesting a new code invalidates any still-pending one).
     consumed_at: Mapped[Optional[datetime]] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+
+
+class RefreshToken(Base):
+    """A refresh token, which the app trades for a new access token shortly before the
+    old one expires. The token itself is an opaque random string (never a JWT, so it can't
+    be mistaken for an access token) and only its sha256 is stored. Every use retires the
+    token and issues a new one in the same family; presenting a retired token again means
+    it was copied, so the whole family is revoked (see auth.rotate_refresh_token)."""
+
+    __tablename__ = "refresh_tokens"
+
+    token_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    # One family per sign-in: all the tokens that descend from one login.
+    family_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False)
+    used_at: Mapped[Optional[datetime]] = mapped_column(default=None)     # set when it was traded in
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(default=None)  # sign-out, reuse, deletion
     created_at: Mapped[datetime] = mapped_column(default=_now)

@@ -1,8 +1,8 @@
 {
   "summary": {
     "Backend / API": {
-      "total": 89,
-      "passed": 89,
+      "total": 104,
+      "passed": 104,
       "failed": 0
     },
     "ML core pipeline": {
@@ -16,8 +16,8 @@
       "failed": 0
     }
   },
-  "total": 138,
-  "total_passed": 138,
+  "total": 153,
+  "total_passed": 153,
   "total_failed": 0,
   "tests_by_category": {
     "Backend / API": [
@@ -399,6 +399,81 @@
       {
         "file": "test_api_profile_pictures.py",
         "test": "test_signing_changes_when_any_signed_field_changes",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_login_returns_a_refresh_token_and_both_lifetimes",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_the_default_access_token_lifetime_is_thirty_minutes",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_the_access_token_lifetime_follows_the_setting",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_refresh_gives_a_working_access_token_and_a_new_refresh_token",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_refresh_needs_no_access_token",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_the_new_refresh_token_can_be_used_in_turn",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_a_refresh_token_used_long_ago_is_a_theft_signal_and_ends_the_family",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_a_quick_repeat_is_forgiven_for_a_lost_answer",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_an_expired_refresh_token_is_refused",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_unknown_and_malformed_tokens_are_refused",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_an_access_token_is_not_a_refresh_token_and_the_reverse",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_only_the_hash_is_stored",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_logout_ends_the_session_and_never_fails",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_logging_out_one_session_leaves_another_signed_in",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_refresh.py",
+        "test": "test_deleting_the_account_ends_every_session",
         "outcome": "PASSED"
       },
       {

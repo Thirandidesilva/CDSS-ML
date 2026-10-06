@@ -16,6 +16,7 @@ class BusinessCode(str, Enum):
     DUPLICATE_USERNAME = "1005"
     OTP_INVALID = "1006"  # wrong code, expired, or attempts exhausted — never distinguished
     EMAIL_SEND_FAILED = "1007"  # the email provider refused or couldn't deliver the message
+    INVALID_REFRESH_TOKEN = "1008"  # unknown, expired, already used, revoked, or the account is gone
 
     # 2xxx = dog domain
     DOG_NOT_FOUND = "2001"
@@ -45,6 +46,7 @@ class BusinessCode(str, Enum):
 # stays 200 with code "1001" rather than a 401.
 HTTP_STATUS = {
     BusinessCode.MISSING_OR_INVALID_TOKEN: 401,
+    BusinessCode.INVALID_REFRESH_TOKEN: 401,
     BusinessCode.DOG_NOT_FOUND: 404,
     BusinessCode.EMAIL_SEND_FAILED: 502,
     BusinessCode.OWNERSHIP_VIOLATION: 403,
