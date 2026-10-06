@@ -36,6 +36,7 @@ from ..schemas.auth import (
 )
 from ..services import email as email_service
 from ..services import otp as otp_service
+from ..services.email_templates import password_reset_otp_email, username_recovery_email
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -173,6 +174,7 @@ def forget_username(payload: ForgetUsernameRequest, db: Session = Depends(get_db
 
     email_service.send_email(
         user.email, "Your Pawsitivity username", f"Your username is: {user.user_name}",
+        html=username_recovery_email(user.user_name, user.email),
     )
     return envelope(BusinessCode.SUCCESS, [{"message": "your username has been emailed to you"}])
 
@@ -196,6 +198,7 @@ def forget_password(payload: ForgetPasswordRequest, db: Session = Depends(get_db
     email_service.send_email(
         user.email, "Your Pawsitivity verification code",
         f"Your verification code is {code}. It expires in a few minutes.",
+        html=password_reset_otp_email(code),
     )
     return envelope(BusinessCode.SUCCESS, [{"message": "a verification code has been sent to your email"}])
 

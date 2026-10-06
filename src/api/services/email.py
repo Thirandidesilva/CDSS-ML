@@ -15,19 +15,22 @@ from ..errors import ApiError
 log = logging.getLogger(__name__)
 
 
-def send_email(to: str, subject: str, body: str) -> None:
+def send_email(to: str, subject: str, body: str, html: str | None = None) -> None:
     # Called as `email_service.send_email(...)` from routers/auth.py (module reference,
     # not `from .email import send_email`) so tests can monkeypatch this exact attribute
     # and have every caller see the patched version.
     settings = get_settings()
     resend.api_key = settings.resend_api_key
     try:
-        resend.Emails.send({
+        params = {
             "from": settings.email_from_address,
             "to": to,
             "subject": subject,
             "text": body,
-        })
+        }
+        if html:
+            params["html"] = html  # `text` stays as the plain-text alternative
+        resend.Emails.send(params)
     except Exception:
         # Resend refuses plenty of ordinary cases (sandbox accounts may only email their own
         # owner, unverified sender domain, bad key, rate limit, network). An unhandled one
