@@ -4,7 +4,7 @@ A map from this repository to a thesis document: what each chapter should say, w
 proves it, and which numbers are safe to quote. Built by reading `.claude/docs/` (the
 project's own working documents — `CLAUDE.md`, `ARCHITECTURE.md`, `PHASES.md`,
 `CODE_GUIDE.md`, `FACTS.md`, `PIPELINE.md`), the source tree, and the test suite
-(82 passed at time of writing: `python -m pytest tests/ -v`).
+(154 passed at time of writing: `python -m pytest tests/ -v`).
 
 This file does not replace those five documents — it re-indexes them for thesis writing.
 Where this guide and one of them disagree, the original in `.claude/docs/` wins; update
@@ -223,13 +223,13 @@ Alembic migrations + Pydantic 2 validation + JWT (`pyjwt`) + bcrypt password has
 ReportLab for PDF rendering + Resend for transactional email.
 Full list in `requirements.txt`.
 
-**Database schema** (`src/api/models.py`, seven tables, Alembic migrations in
+**Database schema** (`src/api/models.py`, eight tables, Alembic migrations in
 `alembic/versions/`):
 `users`, `dogs`, `assessment` (one row per `score_case()` call — persists `theta_irt`
 *or* `theta_calibrated`, never a bare `theta`, matching the naming discipline in
 `CODE_GUIDE.md`), `irt_response` (one row per item, not one wide row), `recommendation`
 (a static mirror of `rules.py`'s nine cells, seeded once by a data migration, never read
-back into scoring logic), `report`, `otp_codes`. The ORM layer is deliberately one-way:
+back into scoring logic), `report`, `otp_codes`, `refresh_tokens`. The ORM layer is deliberately one-way:
 the DB calls into the ML core (`run_pipeline.score_case()`), never the reverse.
 
 **Auth & account recovery:** JWT-based auth (`src/api/auth.py`), role-gated endpoints
@@ -238,18 +238,51 @@ flow backed by a DB table rather than a stateless token specifically so verifica
 attempts can be capped against brute force (`src/api/services/otp.py`,
 `src/api/routers/auth.py`).
 
-**Report generation:** `POST /api/v1/report/generate` builds a JSON audit snapshot
-(`services/report.py`) *and* can draw a vet-facing PDF with ReportLab on demand, at download time, from the stored rows
-(`services/report_pdf.py`, `report_pdf_data.py`, `report_chart.py`; nothing is stored on disk). The PDF context assembly
-(`build_pdf_context` in `report_pdf_data.py`) is worth describing in detail in an
-implementation chapter: it pulls prior assessments for the same dog to compute a
-longitudinal trend banner via `longitudinal.track_theta_change()`, draws a native
-severity chart, and formats the rule engine's recommendation text into bulleted,
-sourced, owner-appropriate language — this is effectively where Phase 12
-("owner-facing output") actually landed, as a generated document rather than a plain-text
-function. **This PDF subsystem is currently uncommitted work** (`git status` shows
-`report_chart.py`, `report_pdf.py`, `report_pdf_data.py` and `report_sources.py` as untracked) — flag this to your
-supervisor/examiner as in-progress if the thesis draft describes it as finished.
+**Sessions and refresh tokens:** the access token is a signed JWT that lasts 30 minutes
+(`ACCESS_TOKEN_EXPIRE_MINUTES`). A client renews it with a refresh token (`POST /api/v1/auth/refresh`)
+shortly before it expires, which keeps a user signed in without keeping a long-lived credential
+in every request. Design points worth describing in a security section: the refresh token is an
+opaque random string, not a JWT, so it cannot be mistaken for an access token; only its SHA-256
+is stored (`refresh_tokens`, `src/api/auth.py`); each use retires the token and issues a new one
+in the same sign-in "family" (rotation); a retired token that is presented again after a
+30-second grace window (kept so a lost reply on a bad connection does not sign the user out) is
+treated as a copy and revokes the whole family; sign-out and account deletion revoke tokens on
+the server, which a stateless refresh token could not do. The default refresh lifetime is 30 days
+(`REFRESH_TOKEN_EXPIRE_DAYS`). The mobile client takes the renewal moment from the server's own
+`expires_in` (one minute before expiry, never more than a tenth of the lifetime), so a 30 minute
+token is renewed after about 29 minutes and a 15 minute token after about 14.
+
+**Report generation:** `POST /api/v1/report/generate` stores a JSON audit snapshot
+(`services/report.py`); `GET /api/v1/report/download/{id}` draws the vet-facing PDF with
+ReportLab at that moment, from the stored rows (`services/report_pdf.py`,
+`report_pdf_data.py`, `report_chart.py`). Nothing is written to disk, which is what lets the
+API run on a serverless host. The PDF context assembly (`build_pdf_context` in
+`report_pdf_data.py`) is worth describing in detail in an implementation chapter: it pulls
+prior assessments for the same dog to compute a longitudinal trend banner via
+`longitudinal.track_theta_change()`, lays out a native severity chart, and formats the rule
+engine's recommendation text into bulleted, sourced, owner-appropriate language. This is
+effectively where Phase 12 ("owner-facing output") landed, as a generated document rather
+than a plain-text function. An earlier version rendered an HTML template with headless
+Chromium (Playwright); it was replaced because Chromium cannot run on a serverless host.
+
+**Known limitation to state:** the PDF uses a built-in Latin font, so Sinhala and Tamil
+characters (for example a local-language dog name) print as `?`. Bundling Noto fonts was tried
+and rejected: ReportLab draws one glyph per character and does no OpenType shaping, so Sinhala
+came out garbled and Tamil moved some vowel signs, which would show a misspelt name in a
+clinical document.
+
+**Deployment (Vercel):** `index.py` exposes the app; `vercel.json`, `.vercelignore` and
+`.python-version` (3.12) configure it. The database is reached through Supabase's transaction
+pooler (port 6543) with `DB_POOL_MODE=null`; migrations are run from a developer machine against
+the direct connection. `requirements.txt` holds only what the deployed API imports (about 257 MB
+installed); tests, migrations and the offline data scripts are in `requirements-dev.txt`.
+
+**Mobile client:** the Flutter app (`Pawsitivity-Mobile`) was connected to this API in nine
+phases (networking, authentication, account recovery, profile and photos, dogs, assessment,
+history and home, vet report, hardening). Its own automated suite has 354 tests. Two details
+that are worth citing: the weekly activity on the Home screen is computed for the phone's own
+time zone (`utc_offset_minutes` on `POST /api/v1/assessment/weekly-summary`; omitted means UTC),
+and the history trend uses the same 95% minimum detectable change rule as the report.
 
 **API design conventions worth naming in a thesis:** every endpoint response is wrapped
 in a `{"code", "response"}` envelope (`src/api/errors.py`) except the PDF download route,
@@ -262,7 +295,7 @@ recommendation returns HTTP 200 with the withheld payload, not an error, matchin
 
 ## 8. Testing and validation strategy (methodology chapter, or its own section)
 
-82 tests across 15 files (`tests/`), run with `python -m pytest tests/ -v`. All passing at
+154 tests across 16 files (`tests/`), run with `python -m pytest tests/ -v`. All passing at
 time of writing. The project's own testing philosophy, worth quoting or paraphrasing:
 *"Each test encodes a defect that was actually found in this project's outputs. Name them
 after the defect, not after the function."* (`CODE_GUIDE.md`)
@@ -403,5 +436,5 @@ narrate it; do not silently prefer one number.
       the results chapter.
 - [ ] `REPRODUCIBILITY.md` (Phase 13) exists, or its absence is acknowledged as
       in-progress work.
-- [ ] The uncommitted PDF-report files (§7) are either committed or described as
-      work-in-progress, not as a finished, tested subsystem.
+- [ ] The PDF report limitation (§7: Sinhala and Tamil text prints as `?`) is stated
+      wherever the report is described as a feature.

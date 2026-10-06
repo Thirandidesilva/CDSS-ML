@@ -1,8 +1,8 @@
 {
   "summary": {
     "Backend / API": {
-      "total": 104,
-      "passed": 104,
+      "total": 105,
+      "passed": 105,
       "failed": 0
     },
     "ML core pipeline": {
@@ -16,8 +16,8 @@
       "failed": 0
     }
   },
-  "total": 153,
-  "total_passed": 153,
+  "total": 154,
+  "total_passed": 154,
   "total_failed": 0,
   "tests_by_category": {
     "Backend / API": [
@@ -204,6 +204,11 @@
       {
         "file": "test_api_auth.py",
         "test": "test_forget_username",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_username_recovery_email_escapes_html",
         "outcome": "PASSED"
       },
       {

@@ -50,18 +50,21 @@ system it exercises. Full result: `results/functionality_test_report.json`.
 
 | Area | Total | Passed | Failed |
 |---|---|---|---|
-| Backend / API (auth, dogs, assessment, report, users routers) | 49 | 49 | 0 |
+| Backend / API (auth and token refresh, dogs, assessment, report, users routers, photo upload) | 105 | 105 | 0 |
 | ML core pipeline (IRT, clustering, rule engine, longitudinal tracking, leakage guard) | 35 | 35 | 0 |
-| Report / PDF generation service | 7 | 7 | 0 |
-| **Total** | **91** | **91** | **0** |
+| Report / PDF generation service | 14 | 14 | 0 |
+| **Total** | **154** | **154** | **0** |
 
 *Status: regenerated, `python src/functionality_report.py`.*
 
-**Caveat on the "Report / PDF generation service" row.** These 7 tests pass, but the
-PDF report subsystem they test (`src/api/services/report_chart.py`, `report_pdf.py`,
-`report_pdf_data.py`, `report_sources.py`) is **currently uncommitted work** in this
-repository's git history. State it as in-progress, not as a finished, released
-subsystem, per `docs/THESIS_GUIDE.md` §7 and §12.
+**Note on the "Report / PDF generation service" row.** These 14 tests cover the chart layout,
+the source detection and the ReportLab renderer (a real two-page PDF is produced, with and
+without the alert banner, and a rendering failure answers with code 4004). The report
+router tests (generate, list, download, ownership, no file written to disk) are counted in
+the backend row. Known limitation to state alongside these results: the PDF uses a built-in
+Latin font, so Sinhala and Tamil characters print as `?`; bundling Noto fonts was tried and
+rejected because ReportLab does not shape those scripts and vowel signs came out in the wrong
+place.
 
 **What each area's tests actually prove**, for a methodology-aware results chapter
 rather than a bare pass count:
@@ -73,13 +76,16 @@ rather than a bare pass count:
 | `test_phenotype_labels_follow_profile_not_index` | Cluster-to-phenotype-name mapping is stable across k-means re-initialisation |
 | `test_single_band_change_is_not_detectable` | Longitudinal tracking refuses to call a one-band move "deterioration" below the MDC95 noise floor |
 | `test_flag_irt_withholds_and_flag_rf_downgrades` | The two uncertainty flags behave asymmetrically, as designed |
-| Backend/API suite (49 tests) | Every router endpoint's success path, ownership/authorization checks, and business-code error paths |
+| Backend/API suite (105 tests) | Every router endpoint's success path, ownership/authorization checks, and business-code error paths |
 
 ### 5.3.2 Mobile manual test plan
 
-The mobile client (`Pawsitivity-Mobile`, a separate Flutter repository) has no
-automated test suite beyond the unmodified default Flutter scaffold smoke test. Manual
-testing of the core user flows is required; the table below is a template — the
+The mobile client (`Pawsitivity-Mobile`, a separate Flutter repository) has its own
+automated suite (`flutter test`, 354 tests at the time of writing, run with stubbed network
+adapters and fake repositories, plus fixtures captured from this backend's real answers).
+It checks parsing, error handling, the screens' states and the report flow, but not the
+running app on a device against the deployed server. Manual testing of the core user flows
+on a device is therefore still required; the table below is a template — the
 **Actual Result** and **Pass/Fail** columns are intentionally left blank for the
 author to complete by exercising the running app, since no automated or observed
 result exists yet to report.
@@ -220,9 +226,10 @@ quoted elsewhere in the thesis.
 
 ## 5.5 Summary
 
-Functionality is fully evidenced: 91 of 91 automated tests pass across the backend,
-API, and ML core, with the report/PDF subsystem correctly flagged as still
-uncommitted; mobile functionality has a defined manual test plan awaiting execution.
+Functionality is evidenced: 154 of 154 automated backend tests pass across the API,
+the report/PDF service and the ML core, and the mobile client has a separate automated
+suite (354 tests); testing the running app on a device has a defined manual test plan
+awaiting execution.
 Accuracy is evidenced per-component on the metric appropriate to each: the IRT
 measurement model on reliability and fit (with one open discrepancy against the prior
 analysis, flagged rather than resolved silently), the clustering on internal
