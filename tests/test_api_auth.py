@@ -69,6 +69,7 @@ def test_forget_password_then_reset(api_client, sent_emails):
     assert "reset_token" not in forgot.json()["response"][0]  # no longer handed back in-band
 
     code = _extract_code(sent_emails[-1][2])
+    assert code in sent_emails.html[-1] and ">OTP<" in sent_emails.html[-1]
     verified = api_client.post(
         "/api/v1/auth/forget-password/verify-otp", json={"email": "dana@example.com", "otp": code}
     )
@@ -112,6 +113,16 @@ def test_forget_username(api_client, sent_emails):
     username_email = sent_emails[-1]
     assert username_email[0] == "erin@example.com"
     assert "erin" in username_email[2]
+    assert "Your username, recovered." in sent_emails.html[-1]
+    assert "erin@example.com" in sent_emails.html[-1]
+
+
+def test_username_recovery_email_escapes_html():
+    from api.services.email_templates import username_recovery_email
+
+    html = username_recovery_email("<script>x</script>", "a@b.com")
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
 
 
 def test_forget_username_unknown_email_returns_business_code(api_client, sent_emails):

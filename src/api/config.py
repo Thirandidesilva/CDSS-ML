@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     resend_api_key: str
     email_from_address: str
 
+    # Public https URL of the Pawsitivity logo PNG (Cloudinary) shown in the HTML email
+    # header. Optional: without it the emails render with no logo.
+    email_logo_url: Optional[str] = None
+
     otp_expire_minutes: int = 10
     otp_max_attempts: int = 5
 

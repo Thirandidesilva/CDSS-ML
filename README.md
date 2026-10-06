@@ -71,7 +71,7 @@ pip install -r requirements-dev.txt   # requirements.txt is the runtime-only sub
 No configuration needed — reads straight from `data/reference/` and `results/`.
 
 ```bash
-python -m pytest tests/ -v                # full suite (153 tests as of this writing)
+python -m pytest tests/ -v                # full suite (154 tests as of this writing)
 python src/run_pipeline.py                # scores 3 demo dogs, prints every stage
 python src/run_pipeline.py --all          # scores the full 163-dog cohort
 python src/run_pipeline.py --interactive  # enter one dog's answers by hand

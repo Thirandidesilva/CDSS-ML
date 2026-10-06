@@ -117,10 +117,15 @@ def sent_emails(monkeypatch):
     attribute on the email module itself (not a name imported elsewhere), which is
     exactly what routers/auth.py's `email_service.send_email(...)` call style is for.
     """
-    sent = []
+    class _Sent(list):
+        html: list = []
 
-    def _fake_send(to, subject, body):
+    sent = _Sent()
+    sent.html = []  # HTML alternative per email, parallel to `sent` (None when not given)
+
+    def _fake_send(to, subject, body, html=None):
         sent.append((to, subject, body))
+        sent.html.append(html)
 
     from api.services import email as email_service
 
