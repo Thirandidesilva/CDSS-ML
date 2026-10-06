@@ -43,6 +43,11 @@ UNAUTHORIZED = {401: {
     "content": {"application/json": {"example": _body("1000", "invalid or expired token")}},
 }}
 
+INVALID_REFRESH_TOKEN = {401: {
+    "description": "The refresh token is unknown, expired, already used, or its account is gone: sign in again",
+    "content": {"application/json": {"example": _body("1008", "refresh token is invalid or expired")}},
+}}
+
 FORBIDDEN = {403: {
     "description": "Authenticated, but this resource belongs to someone else",
     "content": {"application/json": {"example": _body("2002", "not your dog")}},

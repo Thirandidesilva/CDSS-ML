@@ -18,7 +18,7 @@ RESULTS = ROOT / "results"
 CATEGORIES = {
     "Backend / API": [
         "test_api_assessment.py", "test_api_auth.py", "test_api_dogs.py",
-        "test_api_report.py", "test_api_users.py", "test_api_profile_pictures.py",
+        "test_api_report.py", "test_api_users.py", "test_api_profile_pictures.py", "test_api_refresh.py",
     ],
     "ML core pipeline": [
         "test_irt.py", "test_rules.py", "test_longitudinal.py", "test_cluster.py",

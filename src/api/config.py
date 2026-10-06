@@ -16,7 +16,11 @@ class Settings(BaseSettings):
     database_url: str  # required — no default, so a missing .env fails loudly at startup
     jwt_secret: str     # required — signs/verifies every access + reset token
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 30
+    # How long a refresh token (which renews the access token above) stays usable. Each
+    # refresh issues a new one, so this is the longest a user can stay away and remain
+    # signed in.
+    refresh_token_expire_days: int = 30
     reset_token_expire_minutes: int = 15
 
     # "pool" keeps SQLAlchemy's own connection pool (normal server, e.g. Render). "null"

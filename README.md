@@ -71,7 +71,7 @@ pip install -r requirements-dev.txt   # requirements.txt is the runtime-only sub
 No configuration needed — reads straight from `data/reference/` and `results/`.
 
 ```bash
-python -m pytest tests/ -v                # full suite (138 tests as of this writing)
+python -m pytest tests/ -v                # full suite (153 tests as of this writing)
 python src/run_pipeline.py                # scores 3 demo dogs, prints every stage
 python src/run_pipeline.py --all          # scores the full 163-dog cohort
 python src/run_pipeline.py --interactive  # enter one dog's answers by hand
@@ -90,7 +90,7 @@ Fill in:
 | Group | Variables | Notes |
 |---|---|---|
 | Database | `DATABASE_URL` | Postgres. This project uses Supabase — use the **Session pooler** connection string (`aws-0-<region>.pooler.supabase.com:5432`), not the direct `db.<ref>.supabase.co` host, which is IPv6-only and may not resolve on your network. Needs the `+psycopg` driver prefix (`postgresql+psycopg://...`) — the bare `postgresql://` scheme defaults to `psycopg2`, which isn't installed. For quick local testing without Supabase, `DATABASE_URL=sqlite:///./dev.db` also works. |
-| Auth | `JWT_SECRET`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `RESET_TOKEN_EXPIRE_MINUTES` | `JWT_SECRET` must be a real random value before running for real. |
+| Auth | `JWT_SECRET`, `JWT_ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS`, `RESET_TOKEN_EXPIRE_MINUTES` | `JWT_SECRET` must be a real random value before running for real. Defaults: access token 30 minutes, refresh token 30 days. An `ACCESS_TOKEN_EXPIRE_MINUTES` left over in a host's settings overrides the default. |
 | Email (OTP) | `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS` | Sent via Resend's HTTP API. `EMAIL_FROM_ADDRESS` must be either Resend's sandbox sender on `resend.dev` (only deliverable to the email the Resend account itself was signed up with) or an address on a domain verified in that Resend account (Dashboard → Domains → add the SPF/DKIM records). |
 | OTP | `OTP_EXPIRE_MINUTES`, `OTP_MAX_ATTEMPTS` | Defaults: 10 minutes, 5 attempts. |
 
@@ -101,7 +101,7 @@ alembic upgrade head
 ```
 
 Creates all tables (`users`, `dogs`, `assessment`, `irt_response`, `recommendation`,
-`report`, `otp_codes`) and seeds the 9 static recommendation rows straight from
+`report`, `otp_codes`, `refresh_tokens`) and seeds the 9 static recommendation rows straight from
 `rules.py`. Safe to re-run.
 
 ### 3. Start the server
@@ -125,7 +125,13 @@ in `/docs`), and return real HTTP status codes for genuine transport-layer failu
 (401/403/404/422/500) while using `code` for business outcomes (wrong password,
 duplicate email, etc.) that are still a well-formed 200.
 
-- **Auth** — register, login (JWT bearer tokens), and an OTP-gated account-recovery
+- **Auth** — register, login, and renewal: login returns a short-lived access token (JWT,
+  30 minutes) and a refresh token (opaque, 30 days, stored only as a hash). `POST /auth/refresh`
+  trades a refresh token for a new pair, and works after the access token has expired; every
+  use retires the token it was given. A token that was used long ago and shows up again is a
+  copy, so its whole sign-in is revoked (a repeat within 30 seconds is forgiven, for a lost
+  reply). `POST /auth/logout` revokes the session; deleting the account revokes them all.
+  Clients should renew shortly before `expires_in` runs out. Account recovery is OTP-gated:
   flow: `forget-username`/`forget-password` email a 6-digit code (DB-backed with
   capped verification attempts, not a stateless token — a code needs real brute-force
   protection), and only `verify-otp` succeeding reveals the username (by email) or

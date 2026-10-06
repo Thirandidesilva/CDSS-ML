@@ -130,7 +130,9 @@
                         {
                           "access_token": "eyJhbGciOiJIUzI1NiIs...",
                           "token_type": "bearer",
-                          "expires_in": 3600,
+                          "expires_in": 1800,
+                          "refresh_token": "q3Vf...opaque...",
+                          "refresh_expires_in": 2592000,
                           "user": {
                             "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
                             "role": "owner"
@@ -150,6 +152,153 @@
                       ]
                     }
                   }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "operationId": "refresh_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "A new access token and a new refresh token; the old refresh token no longer works",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                      "token_type": "bearer",
+                      "expires_in": 1800,
+                      "refresh_token": "q3Vf...opaque...",
+                      "refresh_expires_in": 2592000,
+                      "user": {
+                        "user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
+                        "role": "owner"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The refresh token is unknown, expired, already used, or its account is gone: sign in again",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1008",
+                  "response": [
+                    {
+                      "message": "refresh token is invalid or expired"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unhandled server error",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "9000",
+                  "response": [
+                    {
+                      "message": "internal server error"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "example": {
+                  "code": "0000",
+                  "response": [
+                    {
+                      "message": "signed out"
+                    }
+                  ]
                 }
               }
             }
@@ -3805,6 +3954,20 @@
           "password"
         ],
         "title": "LoginRequest"
+      },
+      "RefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshRequest"
       },
       "RegisterRequest": {
         "properties": {

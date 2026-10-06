@@ -9,17 +9,27 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import create_access_token, create_reset_token, hash_password, verify_password, verify_reset_token
+from ..auth import (
+    create_access_token,
+    create_reset_token,
+    hash_password,
+    issue_refresh_token,
+    revoke_refresh_token_family,
+    rotate_refresh_token,
+    verify_password,
+    verify_reset_token,
+)
 from ..codes import BusinessCode
 from ..db import get_db
 from ..enums import OtpPurpose
 from ..errors import ApiError, envelope
 from ..models import User
-from ..openapi_responses import EMAIL_SEND_FAILED, SERVER_ERROR, success_variants
+from ..openapi_responses import EMAIL_SEND_FAILED, INVALID_REFRESH_TOKEN, SERVER_ERROR, success, success_variants
 from ..schemas.auth import (
     ForgetPasswordRequest,
     ForgetUsernameRequest,
     LoginRequest,
+    RefreshRequest,
     RegisterRequest,
     ResetPasswordRequest,
     VerifyOtpRequest,
@@ -74,7 +84,8 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login", responses={
     **success_variants(
         ("logged_in", "Valid credentials", envelope(BusinessCode.SUCCESS, [{
-            "access_token": "eyJhbGciOiJIUzI1NiIs...", "token_type": "bearer", "expires_in": 3600,
+            "access_token": "eyJhbGciOiJIUzI1NiIs...", "token_type": "bearer", "expires_in": 1800,
+            "refresh_token": "q3Vf...opaque...", "refresh_expires_in": 2592000,
             "user": {"user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab", "role": "owner"},
         }])),
         ("invalid_credentials", "Wrong username/email or password", envelope(BusinessCode.INVALID_CREDENTIALS, [
@@ -95,12 +106,51 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         raise ApiError(BusinessCode.INVALID_CREDENTIALS, "invalid username/email or password")
 
     token, expires_in = create_access_token(user)
+    refresh_token, refresh_expires_in = issue_refresh_token(user, db)  # a new sign-in, a new family
+    db.commit()
     return envelope(BusinessCode.SUCCESS, [{
         "access_token": token,
         "token_type": "bearer",
         "expires_in": expires_in,
+        "refresh_token": refresh_token,
+        "refresh_expires_in": refresh_expires_in,
         "user": {"user_id": str(user.user_id), "role": user.role.value},
     }])
+
+
+@router.post("/refresh", responses={
+    **success(envelope(BusinessCode.SUCCESS, [{
+        "access_token": "eyJhbGciOiJIUzI1NiIs...", "token_type": "bearer", "expires_in": 1800,
+        "refresh_token": "q3Vf...opaque...", "refresh_expires_in": 2592000,
+        "user": {"user_id": "8f14e45f-ceea-4ee8-a5b1-1234567890ab", "role": "owner"},
+    }]), "A new access token and a new refresh token; the old refresh token no longer works"),
+    **INVALID_REFRESH_TOKEN,
+    **SERVER_ERROR,
+})
+def refresh(payload: RefreshRequest, db: Session = Depends(get_db)):
+    # No Authorization header: the access token has usually just expired, which is exactly
+    # when the app calls this. The refresh token is the credential.
+    user, new_refresh_token, refresh_expires_in = rotate_refresh_token(payload.refresh_token, db)
+    token, expires_in = create_access_token(user)
+    return envelope(BusinessCode.SUCCESS, [{
+        "access_token": token,
+        "token_type": "bearer",
+        "expires_in": expires_in,
+        "refresh_token": new_refresh_token,
+        "refresh_expires_in": refresh_expires_in,
+        "user": {"user_id": str(user.user_id), "role": user.role.value},
+    }])
+
+
+@router.post("/logout", responses={
+    **success(envelope(BusinessCode.SUCCESS, [{"message": "signed out"}])),
+    **SERVER_ERROR,
+})
+def logout(payload: RefreshRequest, db: Session = Depends(get_db)):
+    # Ends the session the refresh token belongs to. Always succeeds, even for a token
+    # that is unknown or already expired: signing out must never fail on the phone.
+    revoke_refresh_token_family(payload.refresh_token, db)
+    return envelope(BusinessCode.SUCCESS, [{"message": "signed out"}])
 
 
 @router.post("/forget-username", responses={

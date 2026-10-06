@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..auth import get_current_user, hash_password, require_role, verify_password
+from ..auth import get_current_user, hash_password, require_role, revoke_all_refresh_tokens, verify_password
 from ..codes import BusinessCode
 from ..db import get_db
 from ..enums import AccountStatus, UserRole
@@ -106,6 +106,7 @@ def delete_profile(user: User = Depends(get_current_user), db: Session = Depends
     # Soft delete only — the row stays for the assessment history it's linked to, but
     # get_current_user() will reject this user's token on every future request.
     user.status = AccountStatus.DELETED
+    revoke_all_refresh_tokens(user.user_id, db)  # no session of this account can be renewed
     db.commit()
     return envelope(BusinessCode.SUCCESS, [{"message": "account deleted"}])
 

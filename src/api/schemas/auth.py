@@ -24,6 +24,12 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RefreshRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    refresh_token: str
+
+
 class ForgetUsernameRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
