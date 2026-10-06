@@ -71,7 +71,7 @@ pip install -r requirements-dev.txt   # requirements.txt is the runtime-only sub
 No configuration needed — reads straight from `data/reference/` and `results/`.
 
 ```bash
-python -m pytest tests/ -v                # full suite (82 tests as of this writing)
+python -m pytest tests/ -v                # full suite (138 tests as of this writing)
 python src/run_pipeline.py                # scores 3 demo dogs, prints every stage
 python src/run_pipeline.py --all          # scores the full 163-dog cohort
 python src/run_pipeline.py --interactive  # enter one dog's answers by hand
@@ -114,8 +114,8 @@ uvicorn api:create_app --factory --app-dir src --reload
 (`index.py` at the repo root builds it once and exposes `app`, which is what Vercel looks for.)
 
 Open **http://127.0.0.1:8000/docs** for the interactive Swagger UI (or read
-`docs/openapi.json` directly — regenerate it with the same `app.openapi()` call the
-existing routers use if the API surface changes).
+`docs/openapi.json` directly; it is generated from `create_app().openapi()` and must be
+regenerated whenever the API surface changes).
 
 ## What the API does
 
@@ -131,9 +131,16 @@ duplicate email, etc.) that are still a well-formed 200.
   protection), and only `verify-otp` succeeding reveals the username (by email) or
   issues the token that unlocks `reset-password`.
 - **Users / Dogs** — profile and dog-profile CRUD, owner-scoped, with admin-only
-  "list everyone" routes.
+  "list everyone" routes. A base64 `profile_picture` on users/update and dogs/create|update is
+  uploaded to Cloudinary by the server (code `5001` when the host has no Cloudinary settings).
 - **Assessment** — `GET questions` (the 12 items), `POST submit` (runs the scoring
-  pipeline via `score_case()` and persists the full audit trail), history listing.
+  pipeline via `score_case()` and persists the full audit trail), `list-by-dog`, `get`,
+  `delete` (soft), `stats`, and `weekly-summary`. Each assessment carries `created_at` (UTC) and
+  `anxiety_index`, a 0 to 1 display value built from theta so that it always agrees with the
+  severity band. `weekly-summary` accepts `utc_offset_minutes` (-840 to 840, default 0) so the
+  week and each assessment's day follow the caller's clock.
+- **Health** — `GET /health` answers `{"status": "ok"}` with no login or database, so a client
+  can wake a sleeping host.
 - **Report** — `POST generate` stores a JSON audit snapshot; `GET download/{id}` draws the
   two-page clinical PDF on demand with ReportLab (pure Python, severity trend chart
   included) from the stored rows. Nothing is written to disk, so it works on a serverless
