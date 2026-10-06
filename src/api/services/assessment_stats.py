@@ -105,17 +105,21 @@ def compute_dog_stats(rows: list) -> dict:
     }
 
 
-def build_weekly_summary(dogs: list, assessments: list, week_start: date) -> dict:
+def build_weekly_summary(
+    dogs: list, assessments: list, week_start: date, utc_offset_minutes: int = 0
+) -> dict:
     """dogs: the target user's non-deleted Dog rows. assessments: their non-deleted
     Assessment rows already filtered to [week_start, week_start+6]. Every dog appears
     with a full 7-day grid even if it had zero activity — a frontend calendar needs
-    the full week, not just the days/dogs with something to show.
+    the full week, not just the days/dogs with something to show. Each assessment counts
+    on the day it falls on at `utc_offset_minutes` from UTC (its created_at is UTC).
     """
+    offset = timedelta(minutes=utc_offset_minutes)
     week_end = week_start + timedelta(days=6)
 
     by_dog_and_day: dict = {}
     for a in assessments:
-        by_dog_and_day.setdefault(a.dog_id, Counter())[a.created_at.date()] += 1
+        by_dog_and_day.setdefault(a.dog_id, Counter())[(a.created_at + offset).date()] += 1
 
     dog_summaries = []
     for dog in dogs:

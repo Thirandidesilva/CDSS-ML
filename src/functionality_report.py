@@ -12,12 +12,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
 
-# Report/PDF service is called out on its own since it's currently uncommitted work
-# (see docs/THESIS_GUIDE.md §7) and must not be presented as a finished subsystem.
+# The report/PDF service (chart layout, ReportLab renderer, source detection) is reported
+# on its own row, apart from the router tests in test_api_report.py, so the thesis can say
+# how much of that subsystem is tested directly.
 CATEGORIES = {
     "Backend / API": [
         "test_api_assessment.py", "test_api_auth.py", "test_api_dogs.py",
-        "test_api_report.py", "test_api_users.py",
+        "test_api_report.py", "test_api_users.py", "test_api_profile_pictures.py",
     ],
     "ML core pipeline": [
         "test_irt.py", "test_rules.py", "test_longitudinal.py", "test_cluster.py",
@@ -29,7 +30,8 @@ CATEGORIES = {
     ],
 }
 
-_RESULT_LINE = re.compile(r"^(tests/\S+\.py)::(\S+) (PASSED|FAILED|ERROR)")
+# Test ids can contain spaces (parametrised ids), so the name is everything up to the outcome.
+_RESULT_LINE = re.compile(r"^(tests/\S+\.py)::(.+?) (PASSED|FAILED|ERROR)")
 
 
 def _category_for(file_name: str) -> str:

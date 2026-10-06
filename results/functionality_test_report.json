@@ -1,8 +1,8 @@
 {
   "summary": {
     "Backend / API": {
-      "total": 49,
-      "passed": 49,
+      "total": 89,
+      "passed": 89,
       "failed": 0
     },
     "ML core pipeline": {
@@ -11,13 +11,13 @@
       "failed": 0
     },
     "Report / PDF generation service": {
-      "total": 7,
-      "passed": 7,
+      "total": 14,
+      "passed": 14,
       "failed": 0
     }
   },
-  "total": 91,
-  "total_passed": 91,
+  "total": 138,
+  "total_passed": 138,
   "total_failed": 0,
   "tests_by_category": {
     "Backend / API": [
@@ -117,6 +117,61 @@
         "outcome": "PASSED"
       },
       {
+        "file": "test_api_assessment.py",
+        "test": "test_anxiety_index_pins_the_band_cut_points",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_anxiety_index_is_clamped_to_zero_and_one",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_anxiety_index_never_decreases_as_theta_rises",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_anxiety_index_always_agrees_with_the_severity_band",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_anxiety_index_without_a_99th_percentile_still_reaches_one",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_band_cut_points_read_the_norms_table",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_submit_returns_an_index_that_matches_the_band_and_a_timestamp",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_list_and_get_return_the_same_index_and_timestamp_as_submit",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_counts_an_evening_assessment_on_the_users_day",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_week_follows_the_users_clock",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_assessment.py",
+        "test": "test_weekly_summary_rejects_an_impossible_offset",
+        "outcome": "PASSED"
+      },
+      {
         "file": "test_api_auth.py",
         "test": "test_openapi_docs_render",
         "outcome": "PASSED"
@@ -172,6 +227,41 @@
         "outcome": "PASSED"
       },
       {
+        "file": "test_api_auth.py",
+        "test": "test_forget_username_when_resend_refuses_is_a_clean_502_not_a_500",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_forget_password_when_resend_refuses_is_a_clean_502",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_a_network_failure_reaching_resend_is_also_a_502",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_unknown_email_is_still_reported_before_any_email_is_attempted",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_health_is_open_and_does_not_need_a_token",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_health_does_not_touch_the_database",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_auth.py",
+        "test": "test_engine_uses_a_pool_by_default_and_no_pool_in_serverless_mode",
+        "outcome": "PASSED"
+      },
+      {
         "file": "test_api_dogs.py",
         "test": "test_create_and_list_dog",
         "outcome": "PASSED"
@@ -217,6 +307,101 @@
         "outcome": "PASSED"
       },
       {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_user_photo_is_uploaded_and_the_cloudinary_url_is_stored",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_the_api_secret_never_leaves_the_server",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_an_existing_url_is_stored_as_is_without_touching_cloudinary",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_uploads_not_configured_is_503_and_nothing_changes",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_invalid_images_are_400_before_any_upload[data:text/plain;base64,aGVsbG8=]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_invalid_images_are_400_before_any_upload[data:image/jpeg;base64,this is not base64!!]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_invalid_images_are_400_before_any_upload[data:image/jpeg;base64,]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_invalid_images_are_400_before_any_upload[data:image/gif;base64,R0lGODlh]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_invalid_images_are_400_before_any_upload[data:image/jpeg,not-base64-encoded]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_oversized_image_is_400",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_cloudinary_failures_are_502_and_the_profile_is_untouched[network]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_cloudinary_failures_are_502_and_the_profile_is_untouched[rejected]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_cloudinary_failures_are_502_and_the_profile_is_untouched[no_url]",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_dog_created_with_a_photo_stores_the_cloudinary_url",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_dog_create_with_a_failed_upload_creates_no_dog",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_dog_update_with_a_photo",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_dog_update_with_a_failed_upload_changes_nothing",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_someone_elses_dog_is_403_and_nothing_is_uploaded",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_profile_pictures.py",
+        "test": "test_signing_changes_when_any_signed_field_changes",
+        "outcome": "PASSED"
+      },
+      {
         "file": "test_api_report.py",
         "test": "test_generate_and_list_report",
         "outcome": "PASSED"
@@ -233,7 +418,17 @@
       },
       {
         "file": "test_api_report.py",
-        "test": "test_download_report_with_missing_file_returns_404",
+        "test": "test_generating_and_downloading_write_nothing_to_disk",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_can_be_repeated_and_is_a_real_two_page_pdf",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_unknown_report_returns_404",
         "outcome": "PASSED"
       },
       {
@@ -244,6 +439,11 @@
       {
         "file": "test_api_report.py",
         "test": "test_get_all_reports_requires_admin",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_api_report.py",
+        "test": "test_download_when_the_renderer_fails_is_503",
         "outcome": "PASSED"
       },
       {
@@ -447,17 +647,27 @@
     "Report / PDF generation service": [
       {
         "file": "test_report_pdf_helpers.py",
-        "test": "test_chart_single_point_has_no_polyline",
+        "test": "test_chart_single_point_is_not_connected",
         "outcome": "PASSED"
       },
       {
         "file": "test_report_pdf_helpers.py",
-        "test": "test_chart_multi_point_has_one_polyline_and_bands",
+        "test": "test_chart_multi_point_is_connected_with_three_bands",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_chart_higher_theta_is_drawn_higher",
         "outcome": "PASSED"
       },
       {
         "file": "test_report_pdf_helpers.py",
         "test": "test_chart_handles_negative_theta_without_clamping_to_zero",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_chart_needs_at_least_one_point",
         "outcome": "PASSED"
       },
       {
@@ -478,6 +688,31 @@
       {
         "file": "test_report_pdf_helpers.py",
         "test": "test_detect_sources_both_in_fixed_order",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_renderer_produces_a_two_page_pdf",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_renderer_draws_the_report_content",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_renderer_omits_the_banner_when_there_is_none",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_renderer_survives_text_outside_latin_1_and_a_single_point",
+        "outcome": "PASSED"
+      },
+      {
+        "file": "test_report_pdf_helpers.py",
+        "test": "test_renderer_failure_is_a_503_not_a_crash",
         "outcome": "PASSED"
       }
     ]

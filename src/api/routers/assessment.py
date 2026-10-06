@@ -46,6 +46,11 @@ from ..services.scoring import run_assessment  # noqa: E402
 
 router = APIRouter(prefix="/api/v1/assessment", tags=["assessment"])
 
+
+def _now_utc() -> datetime:
+    # A function so tests can pin "now" without freezing the whole clock.
+    return datetime.now(timezone.utc)
+
 _ASSESSMENT_EXAMPLE = {
     "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
     "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
@@ -284,9 +289,11 @@ def get_weekly_summary(
     if target_user_id != user.user_id and user.role != UserRole.ADMIN:
         raise ApiError(BusinessCode.OWNERSHIP_VIOLATION, "not your weekly summary")
 
-    # Monday-Sunday of the CURRENT week, UTC — this project has no per-user timezone
-    # support anywhere (see report_pdf_data.py), so "current week" means the server's.
-    today = datetime.now(timezone.utc).date()
+    # Monday-Sunday of the CURRENT week on the caller's clock (utc_offset_minutes from UTC;
+    # 0 for clients that don't send it). The window is then converted back to UTC bounds
+    # to query created_at, which is stored in UTC.
+    offset = timedelta(minutes=payload.utc_offset_minutes)
+    today = (_now_utc() + offset).date()
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
 
@@ -296,8 +303,8 @@ def get_weekly_summary(
     # created_at is a datetime column — comparing it against bare date objects behaves
     # inconsistently across dialects (especially SQLite's string-based comparison), so
     # the bounds are built as explicit UTC datetimes instead.
-    range_start = datetime.combine(week_start, time.min, tzinfo=timezone.utc)
-    range_end = datetime.combine(week_end + timedelta(days=1), time.min, tzinfo=timezone.utc)
+    range_start = datetime.combine(week_start, time.min, tzinfo=timezone.utc) - offset
+    range_end = datetime.combine(week_end + timedelta(days=1), time.min, tzinfo=timezone.utc) - offset
     assessments = db.scalars(
         select(Assessment).where(
             Assessment.dog_id.in_([dog.dog_id for dog in dogs]),
@@ -306,4 +313,4 @@ def get_weekly_summary(
             Assessment.created_at < range_end,
         )
     ).all()
-    return envelope(BusinessCode.SUCCESS, [build_weekly_summary(dogs, assessments, week_start)])
+    return envelope(BusinessCode.SUCCESS, [build_weekly_summary(dogs, assessments, week_start, payload.utc_offset_minutes)])

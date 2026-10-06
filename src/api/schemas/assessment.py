@@ -69,6 +69,11 @@ class WeeklySummaryRequest(BaseModel):
 
     user_id: Optional[uuid.UUID] = None
 
+    # The caller's offset from UTC, so "this week" and each assessment's day follow the
+    # user's own clock (an assessment at 23:30 in UTC+5:30 belongs to that evening, not
+    # to the next UTC day). 0 means UTC, which is what clients that omit it get.
+    utc_offset_minutes: int = Field(default=0, ge=-840, le=840)
+
 
 class QuestionOut(BaseModel):
     # What GET /assessment/questions returns — one row per item, for a client to

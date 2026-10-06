@@ -368,3 +368,80 @@ def test_list_and_get_return_the_same_index_and_timestamp_as_submit(owner_with_d
     for other in (listed, fetched):
         assert other["anxiety_index"] == submitted["anxiety_index"]
         assert other["created_at"] == submitted["created_at"]
+
+
+# ---------------------------------------------------------------- weekly summary time zones
+
+def _pin_time(monkeypatch, client, test_db_engine, headers, dog_id, *, now, assessed_at):
+    """Submits one assessment, moves its created_at to `assessed_at` and pins the server's
+    clock to `now` (both UTC), so the week can be checked for any offset."""
+    from datetime import timezone
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import Session
+
+    from api.models import Assessment
+    from api.routers import assessment as assessment_router
+
+    client.post("/api/v1/assessment/submit", json=dict(NON_WITHHELD, dog_id=dog_id), headers=headers)
+    with Session(test_db_engine) as session:
+        row = session.scalars(select(Assessment)).one()
+        row.created_at = assessed_at.replace(tzinfo=timezone.utc)
+        session.commit()
+    monkeypatch.setattr(assessment_router, "_now_utc", lambda: now.replace(tzinfo=timezone.utc))
+
+
+def _weekly(client, headers, **payload):
+    resp = client.post("/api/v1/assessment/weekly-summary", json=payload, headers=headers)
+    assert resp.status_code == 200, resp.text
+    return resp.json()["response"][0]
+
+
+def test_weekly_summary_counts_an_evening_assessment_on_the_users_day(
+    owner_with_dog, test_db_engine, monkeypatch
+):
+    from datetime import datetime
+
+    client, headers, dog_id = owner_with_dog
+    # Saturday 3 Oct 2026, 20:00 UTC is already Sunday 4 Oct, 00:30 in UTC+5:30.
+    _pin_time(
+        monkeypatch, client, test_db_engine, headers, dog_id,
+        now=datetime(2026, 10, 4, 5, 0), assessed_at=datetime(2026, 10, 3, 20, 0),
+    )
+
+    def assessed_day(summary):
+        days = summary["dogs"][0]["days"]
+        return [d["weekday"] for d in days if d["assessed"]]
+
+    assert assessed_day(_weekly(client, headers)) == ["Saturday"]  # UTC, as before
+    assert assessed_day(_weekly(client, headers, utc_offset_minutes=330)) == ["Sunday"]
+
+
+def test_weekly_summary_week_follows_the_users_clock(owner_with_dog, test_db_engine, monkeypatch):
+    from datetime import datetime
+
+    client, headers, dog_id = owner_with_dog
+    # Monday 5 Oct 03:00 UTC is still Sunday evening (22:00) in UTC-5, so for that user
+    # the current week is still 28 Sep to 4 Oct and the Sunday assessment is in it.
+    _pin_time(
+        monkeypatch, client, test_db_engine, headers, dog_id,
+        now=datetime(2026, 10, 5, 3, 0), assessed_at=datetime(2026, 10, 5, 2, 30),
+    )
+
+    utc_week = _weekly(client, headers)
+    assert utc_week["week_start"] == "2026-10-05"  # a new week, assessment on its Monday
+
+    local_week = _weekly(client, headers, utc_offset_minutes=-300)
+    assert local_week["week_start"] == "2026-09-28"
+    assert local_week["week_end"] == "2026-10-04"
+    sunday = local_week["dogs"][0]["days"][6]
+    assert sunday["date"] == "2026-10-04" and sunday["assessed"] is True
+
+
+def test_weekly_summary_rejects_an_impossible_offset(owner_with_dog):
+    client, headers, _dog_id = owner_with_dog
+    for offset in (-841, 841):
+        resp = client.post(
+            "/api/v1/assessment/weekly-summary", json={"utc_offset_minutes": offset}, headers=headers
+        )
+        assert resp.status_code == 422

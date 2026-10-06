@@ -232,6 +232,21 @@
               }
             }
           },
+          "502": {
+            "description": "The email provider refused or couldn't deliver the message",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1007",
+                  "response": [
+                    {
+                      "message": "we couldn't send the email right now"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unhandled server error",
             "content": {
@@ -306,6 +321,21 @@
                       ]
                     }
                   }
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The email provider refused or couldn't deliver the message",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "1007",
+                  "response": [
+                    {
+                      "message": "we couldn't send the email right now"
+                    }
+                  ]
                 }
               }
             }
@@ -686,6 +716,51 @@
               }
             }
           },
+          "400": {
+            "description": "profile_picture is not a valid base64 image data URI (jpeg/png/webp/heic, max 5 MB)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5003",
+                  "response": [
+                    {
+                      "message": "image must be a base64 jpeg/png/webp/heic data URI"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cloudinary was unreachable or rejected the image",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5002",
+                  "response": [
+                    {
+                      "message": "image upload failed"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cloudinary credentials are not configured on this deployment",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5001",
+                  "response": [
+                    {
+                      "message": "image uploads are not configured"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unhandled server error",
             "content": {
@@ -971,6 +1046,51 @@
                   "response": [
                     {
                       "message": "invalid or expired token"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "profile_picture is not a valid base64 image data URI (jpeg/png/webp/heic, max 5 MB)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5003",
+                  "response": [
+                    {
+                      "message": "image must be a base64 jpeg/png/webp/heic data URI"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cloudinary was unreachable or rejected the image",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5002",
+                  "response": [
+                    {
+                      "message": "image upload failed"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cloudinary credentials are not configured on this deployment",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5001",
+                  "response": [
+                    {
+                      "message": "image uploads are not configured"
                     }
                   ]
                 }
@@ -1457,6 +1577,51 @@
               }
             }
           },
+          "400": {
+            "description": "profile_picture is not a valid base64 image data URI (jpeg/png/webp/heic, max 5 MB)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5003",
+                  "response": [
+                    {
+                      "message": "image must be a base64 jpeg/png/webp/heic data URI"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Cloudinary was unreachable or rejected the image",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5002",
+                  "response": [
+                    {
+                      "message": "image upload failed"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Cloudinary credentials are not configured on this deployment",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "5001",
+                  "response": [
+                    {
+                      "message": "image uploads are not configured"
+                    }
+                  ]
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unhandled server error",
             "content": {
@@ -1749,6 +1914,8 @@
                           "session_number": 1,
                           "theta_calibrated": -0.376,
                           "theta_se": 0.309,
+                          "anxiety_index": 0.136,
+                          "created_at": "2026-09-19T12:00:00",
                           "severity_band": "Low",
                           "phenotype": "Noise-specific",
                           "rf_confidence": 0.79,
@@ -1787,6 +1954,8 @@
                           "session_number": 1,
                           "theta_calibrated": 0.93,
                           "theta_se": 0.536,
+                          "anxiety_index": 0.136,
+                          "created_at": "2026-09-19T12:00:00",
                           "severity_band": "Low",
                           "phenotype": "Noise-specific",
                           "rf_confidence": 0.79,
@@ -1934,6 +2103,8 @@
                           "session_number": 1,
                           "theta_calibrated": -0.376,
                           "theta_se": 0.309,
+                          "anxiety_index": 0.136,
+                          "created_at": "2026-09-19T12:00:00",
                           "severity_band": "Low",
                           "phenotype": "Noise-specific",
                           "rf_confidence": 0.79,
@@ -2073,6 +2244,8 @@
                       "session_number": 1,
                       "theta_calibrated": -0.376,
                       "theta_se": 0.309,
+                      "anxiety_index": 0.136,
+                      "created_at": "2026-09-19T12:00:00",
                       "severity_band": "Low",
                       "phenotype": "Noise-specific",
                       "rf_confidence": 0.79,
@@ -2225,6 +2398,8 @@
                       "session_number": 1,
                       "theta_calibrated": -0.376,
                       "theta_se": 0.309,
+                      "anxiety_index": 0.136,
+                      "created_at": "2026-09-19T12:00:00",
                       "severity_band": "Low",
                       "phenotype": "Noise-specific",
                       "rf_confidence": 0.79,
@@ -2836,7 +3011,7 @@
                       "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
                       "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
                       "generated_at": "2026-09-19T12:00:00+00:00",
-                      "report_format": "json",
+                      "report_format": "pdf",
                       "status": "ready",
                       "content": {
                         "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
@@ -2965,7 +3140,7 @@
                       "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
                       "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
                       "generated_at": "2026-09-19T12:00:00+00:00",
-                      "report_format": "json",
+                      "report_format": "pdf",
                       "status": "ready",
                       "content": {
                         "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
@@ -3064,7 +3239,7 @@
                       "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
                       "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
                       "generated_at": "2026-09-19T12:00:00+00:00",
-                      "report_format": "json",
+                      "report_format": "pdf",
                       "status": "ready",
                       "content": {
                         "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
@@ -3175,28 +3350,12 @@
         ],
         "responses": {
           "200": {
-            "description": "The report file, streamed directly (not wrapped in the {code,response} envelope)",
+            "description": "The rendered vet-report PDF, streamed directly (not the {code,response} envelope)",
             "content": {
               "application/json": {
-                "schema": {},
-                "example": {
-                  "report_id": "d2e3f4a5-6666-4b7c-9d8e-fedcba987654",
-                  "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
-                  "dog_id": "3a21c9e0-1111-4a2b-9c3d-abcdef123456",
-                  "generated_by": "8f14e45f-ceea-4ee8-a5b1-1234567890ab",
-                  "generated_at": "2026-09-19T12:00:00+00:00",
-                  "report_format": "json",
-                  "status": "ready",
-                  "content": {
-                    "assessment_id": "c1a2b3d4-5555-4e6f-8a9b-0123456789ab",
-                    "theta_calibrated": -0.376,
-                    "severity_band": "Low",
-                    "phenotype": "Noise-specific",
-                    "flag_irt": false,
-                    "flag_rf": false
-                  }
-                }
-              }
+                "schema": {}
+              },
+              "application/pdf": {}
             }
           },
           "401": {
@@ -3238,6 +3397,21 @@
                   "response": [
                     {
                       "message": "report not found"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDF could not be rendered",
+            "content": {
+              "application/json": {
+                "example": {
+                  "code": "4004",
+                  "response": [
+                    {
+                      "message": "the report could not be rendered"
                     }
                   ]
                 }
@@ -3883,6 +4057,13 @@
               }
             ],
             "title": "User Id"
+          },
+          "utc_offset_minutes": {
+            "type": "integer",
+            "maximum": 840.0,
+            "minimum": -840.0,
+            "title": "Utc Offset Minutes",
+            "default": 0
           }
         },
         "additionalProperties": false,
